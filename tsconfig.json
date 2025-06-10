@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig.json",
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true, // Allow default imports from modules with no default export
+    "allowUnusedLabels": false, // Disallow unused labels in code
+    "allowUnreachableCode": false, // Disallow unreachable code
+    "declaration": true, // Generate corresponding '.d.ts' declaration files
+    "declarationMap": true, // Create sourcemaps for declaration files
+    "exactOptionalPropertyTypes": true, // Treat optional properties exactly as specified (no widening)
+    "isolatedModules": true, // Ensure each file can be safely transpiled independently
+    "verbatimModuleSyntax": true, // Use verbatim module syntax for better compatibility with ESM
+    "target": "ES2022", // Compile to ECMAScript 2020 syntax
+    "lib": ["ES2022"], // Include built-in library declarations for ES2020
+    "module": "ESNext", // Use ESNext module system
+    "moduleResolution": "node", // Resolve modules like Node.js (node_modules etc.)
+    "rootDir": "./src", // Root folder for your source TypeScript files
+    "outDir": "./dist", // Output folder for compiled JavaScript files
+    "removeComments": true, // Remove comments from output files
+    "esModuleInterop": true, // Allow default imports from CommonJS modules
+    "forceConsistentCasingInFileNames": true, // Ensure consistent casing in file imports
+    "strict": true, // Enable all strict type-checking options (recommended)
+    "noImplicitAny": true, // Raise error on expressions with an implicit 'any' type
+    "noImplicitReturns": true, // Report error if not all code paths return a value
+    "noImplicitThis": true, // Raise error on 'this' expressions with an implicit 'any' type
+    "noFallthroughCasesInSwitch": true, // Prevent fall-through between switch cases without break
+    "noPropertyAccessFromIndexSignature": true, // Prevent accessing properties from index signatures
+    "noUncheckedIndexedAccess": true, // Make indexed access types consider possibility of undefined
+    "noImplicitOverride": true, // Require explicit 'override' keyword when overriding methods
+    "noUnusedLocals": true, // Report errors on unused local variables
+    "noUnusedParameters": true, // Report errors on unused function parameters
+    "skipLibCheck": true, // Skip type checking of all declaration files (*.d.ts)
+    "strictNullChecks": true, // Enable strict null checking (better safety for null/undefined)
+    "strictFunctionTypes": true, // Enforce stricter function type compatibility checks
+    "sourceMap": true, // Generate source map files for debugging
+    "resolveJsonModule": true // Allow importing JSON files as modules
+  },
+  "include": ["src/**/*"], // Include all files under 'src' folder and subfolders
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"], // Exclude these folders and test files from compilation
+  "ts-node": {
+    "esm": true // Enable ESM support for ts-node
+  }
+}
