@@ -7,7 +7,6 @@ import logger from './logger';
 import path from 'path';
 import { regionRoutes } from './routes/regionRoutes';
 import { schoolRoutes } from './routes/schoolRoutes';
-import { errorHandler } from './middleware/errorHandler';
 
 // Load correct environment variables based on NODE_ENV
 const envPath =
@@ -81,6 +80,9 @@ app.get('/health', (_req, res) => {
   res.json({
     status: 'OK',
     timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env['NODE_ENV'],
+    version: process.env['APP_VERSION'],
   });
 });
 

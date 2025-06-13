@@ -20,7 +20,16 @@ export class SchoolController {
     if (validationResult.success) {
       try {
         const school = await schoolService.createSchool(validationResult.data);
-        res.status(201).json({
+
+        if (!school) {
+          res.status(404).json({
+            success: false,
+            message: 'Schoold could not be created',
+          });
+          return;
+        }
+
+        res.status(200).json({
           success: true,
           data: school,
           message: 'School created successfully',
@@ -31,16 +40,24 @@ export class SchoolController {
     }
   }
 
-  async getSchools(req: Request, res: Response): Promise<void> {
+  async getAll(req: Request, res: Response): Promise<void> {
     const validationResult = await schoolQuerySchema.safeParseAsync(req.query);
 
     if (handleValidationError('GET SCHOOLS', validationResult, res)) return;
 
     if (validationResult.success) {
       try {
-        const { schools, total } = await schoolService.getSchools(
-          validationResult.data
-        );
+        const result = await schoolService.getSchools(validationResult.data);
+
+        if (!result) {
+          res.status(404).json({
+            success: false,
+            message: 'No schools found',
+          });
+          return;
+        }
+
+        const { schools, total } = result;
         const limit = validationResult.data.limit || 10;
         const page = validationResult.data.page || 1;
         const totalPages = Math.ceil(total / limit);

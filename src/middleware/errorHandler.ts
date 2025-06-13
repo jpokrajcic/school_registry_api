@@ -38,7 +38,7 @@ export const handleValidationError = (
   if (!result.success) {
     const firstErrorMessage =
       result.error.errors && result.error.errors[0]?.message
-        ? `${action} ${result.error.errors[0].message}`
+        ? `${action} ${result.error.errors[0].path[0]} ${action} ${result.error.errors[0].message}`
         : 'Unknown validation error';
     logger.error(`Validation error 400: ${firstErrorMessage}`);
     console.error('Validation error:', result.error.errors);
@@ -64,4 +64,16 @@ export const handleDatabaseError = (
     success: false,
     message,
   });
+};
+
+export const databaseErrorThrower = (
+  message: string,
+  error: unknown
+): never => {
+  if (error instanceof Error) {
+    error.message = `${message}: ${error}`;
+    throw error;
+  }
+
+  throw new Error(`${message}: Unknown error`);
 };

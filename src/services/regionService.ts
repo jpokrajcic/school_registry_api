@@ -34,6 +34,10 @@ export class RegionService {
       dbQuery = dbQuery.where('is_city', '=', query.is_city);
     }
 
+    if (query.search) {
+      dbQuery = dbQuery.where('name', 'ilike', `%${query.search}%`);
+    }
+
     // Get total count for pagination
     const totalResult = await dbQuery
       .select(eb => eb.fn.countAll().as('count'))
@@ -65,8 +69,7 @@ export class RegionService {
     input: UpdateRegionInput
   ): Promise<Region | undefined> {
     const updateData: RegionUpdate = {
-      ...(input.name !== undefined ? { name: input.name } : {}),
-      ...(input.is_city !== undefined ? { is_city: input.is_city } : {}),
+      ...input,
       updated_at: new Date(),
     };
 

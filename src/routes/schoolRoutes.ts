@@ -6,7 +6,7 @@ export const router = express.Router();
 
 // CRUD routes
 router.post('/', schoolController.create);
-router.get('/', schoolController.getSchools);
+router.get('/', schoolController.getAll);
 router.get('/:id', schoolController.getById);
 router.put('/', schoolController.update);
 router.delete('/:id', schoolController.delete);

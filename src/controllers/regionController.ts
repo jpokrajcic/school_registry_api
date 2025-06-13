@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { type Request, type Response } from 'express';
+import { query, type Request, type Response } from 'express';
 import {
   createRegionSchema,
   regionParamsSchema,
@@ -7,68 +7,74 @@ import {
   updateRegionSchema,
 } from '../schemas/regionSchema';
 import { regionService } from '../services/regionService';
+import {
+  handleDatabaseError,
+  handleValidationError,
+} from '../middleware/errorHandler';
 
 export class RegionController {
   async create(req: Request, res: Response): Promise<void> {
-    try {
-      const validatedData = createRegionSchema.parse(req.body);
-      const region = await regionService.createRegion(validatedData);
+    const validationResult = await createRegionSchema.safeParse(req.body);
 
-      res.status(201).json({
-        success: true,
-        data: region,
-        message: 'Region created successfully',
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({
-          success: false,
-          message: 'Validation error',
-          errors: error.errors,
+    if (handleValidationError('CREATE REGION', validationResult, res)) return;
+
+    if (validationResult.success) {
+      try {
+        const region = await regionService.createRegion(validationResult.data);
+
+        if (!region) {
+          res.status(404).json({
+            success: false,
+            message: 'Region could not be created',
+          });
+          return;
+        }
+
+        res.status(200).json({
+          success: true,
+          data: region,
+          message: 'Region created successfully',
         });
-        return;
+      } catch (error) {
+        handleDatabaseError(res, error, 'Failed to create region');
       }
-
-      console.error('Error creating region:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-      });
     }
   }
 
   async getAll(req: Request, res: Response): Promise<void> {
-    try {
-      const query = regionQuerySchema.parse(req.query);
-      const { regions, total } = await regionService.getRegions(query);
+    const validationResult = await regionQuerySchema.safeParseAsync(req.query);
 
-      const totalPages = Math.ceil(total / (query.limit || 10));
+    if (handleValidationError('GET SCHOOLS', validationResult, res)) return;
 
-      res.json({
-        success: true,
-        data: regions,
-        pagination: {
-          page: query.page || 1,
-          limit: query.limit || 10,
-          total,
-          totalPages,
-        },
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({
-          success: false,
-          message: 'Invalid query parameters',
-          errors: error.errors,
+    if (validationResult.success) {
+      try {
+        const result = await regionService.getRegions(validationResult.data);
+
+        if (!result) {
+          res.status(404).json({
+            success: false,
+            message: 'No regions found',
+          });
+          return;
+        }
+        const { regions, total } = result;
+        const limit = validationResult.data.limit || 10;
+        const page = validationResult.data.page || 1;
+        const totalPages = Math.ceil(total / limit);
+
+        res.json({
+          success: true,
+          data: regions,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages,
+          },
         });
-        return;
+      } catch (error) {
+        handleDatabaseError(res, error, 'Failed to fetch regions');
       }
-
-      console.error('Error fetching regions:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-      });
     }
   }
 
