@@ -8,7 +8,7 @@ export const router = express.Router();
 router.post('/', schoolController.create);
 router.get('/', schoolController.getAll);
 router.get('/:id', schoolController.getById);
-router.put('/', schoolController.update);
+router.put('/:id', schoolController.update);
 router.delete('/:id', schoolController.delete);
 
 export { router as schoolRoutes };

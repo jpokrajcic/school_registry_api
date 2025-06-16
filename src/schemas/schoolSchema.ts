@@ -44,10 +44,6 @@ export const createSchoolSchema = z.object({
 });
 
 export const schoolUpdateSchema = z.object({
-  id: z
-    .number({ message: 'School ID must be a number' })
-    .int()
-    .positive('Id must be positive'),
   name: z
     .string()
     .trim()

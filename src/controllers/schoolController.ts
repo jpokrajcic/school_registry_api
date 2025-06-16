@@ -172,6 +172,7 @@ export class SchoolController {
 
         res.status(200).json({
           success: true,
+          data: validationResult.data.id,
           message: 'School deleted successfully',
         });
       } catch (error) {

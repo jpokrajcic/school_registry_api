@@ -5,6 +5,8 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import logger from './logger';
 import path from 'path';
+import { roleRoutes } from './routes/roleRoutes';
+import { userRoutes } from './routes/userRoutes';
 import { regionRoutes } from './routes/regionRoutes';
 import { schoolRoutes } from './routes/schoolRoutes';
 
@@ -72,6 +74,8 @@ app.get('/', (_req, res) => {
   });
 });
 
+app.use('/api/roles', roleRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/regions', regionRoutes);
 app.use('/api/schools', schoolRoutes);
 

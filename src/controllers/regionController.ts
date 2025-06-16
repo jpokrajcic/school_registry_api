@@ -1,5 +1,4 @@
-import { z } from 'zod';
-import { query, type Request, type Response } from 'express';
+import { type Request, type Response } from 'express';
 import {
   createRegionSchema,
   regionParamsSchema,
@@ -79,100 +78,99 @@ export class RegionController {
   }
 
   async getById(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = regionParamsSchema.parse(req.params);
-      const region = await regionService.getRegionById(id);
+    const validationResult = regionParamsSchema.safeParse(req.params);
 
-      if (!region) {
-        res.status(404).json({
-          success: false,
-          message: 'Region not found',
+    if (handleValidationError('GET Region', validationResult, res)) return;
+
+    if (validationResult.success) {
+      try {
+        const region = await regionService.getRegionById(
+          validationResult.data.id
+        );
+
+        if (!region) {
+          res.status(404).json({
+            success: false,
+            message: 'Region not found',
+          });
+          return;
+        }
+
+        res.json({
+          success: true,
+          data: region,
         });
-        return;
+      } catch (error) {
+        handleDatabaseError(res, error, 'Failed to fetch region');
       }
-
-      res.json({
-        success: true,
-        data: region,
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({
-          success: false,
-          message: 'Invalid region ID',
-        });
-        return;
-      }
-
-      console.error('Error fetching region:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-      });
     }
   }
 
   async update(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = regionParamsSchema.parse(req.params);
-      const validatedData = updateRegionSchema.parse(req.body);
+    const paramsValidationResult = await regionParamsSchema.safeParse(
+      req.params
+    );
+    const bodyValidationResult = await updateRegionSchema.safeParse(req.body);
 
-      const region = await regionService.updateRegion(id, validatedData);
+    if (
+      handleValidationError('UPDATE REGION', paramsValidationResult, res) ||
+      handleValidationError('UPDATE REGION', bodyValidationResult, res)
+    )
+      return;
 
-      if (!region) {
-        res.status(404).json({
-          success: false,
-          message: 'Region not found',
+    if (paramsValidationResult.success && bodyValidationResult.success) {
+      try {
+        const region = await regionService.updateRegion(
+          paramsValidationResult.data.id,
+          bodyValidationResult.data
+        );
+
+        if (!region) {
+          res.status(404).json({
+            success: false,
+            message: 'Region not found',
+          });
+          return;
+        }
+
+        res.status(200).json({
+          success: true,
+          data: region,
+          message: 'Region updated successfully',
         });
-        return;
+      } catch (error) {
+        handleDatabaseError(res, error, 'Failed to update region');
       }
-
-      res.json({
-        success: true,
-        data: region,
-        message: 'Region updated successfully',
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({
-          success: false,
-          message: 'Validation error',
-          errors: error.errors,
-        });
-        return;
-      }
-
-      console.error('Error updating region:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-      });
     }
   }
 
   async delete(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = regionParamsSchema.parse(req.params);
-      const deleted = await regionService.deleteRegion(id);
+    const validationResult = await regionParamsSchema.safeParse(req.params);
 
-      if (!deleted) {
-        res.status(404).json({
-          success: false,
-          message: 'Region not found',
+    if (handleValidationError('DELETE REGION', validationResult, res)) return;
+
+    if (validationResult.success) {
+      try {
+        const isDeleted = await regionService.deleteRegion(
+          validationResult.data.id
+        );
+
+        if (!isDeleted) {
+          res.status(404).json({
+            success: false,
+            message: 'Region not found',
+          });
+          return;
+        }
+
+        res.status(200).json({
+          success: true,
+          data: validationResult.data.id,
+          message: 'Region deleted successfully',
         });
-        return;
+      } catch (error) {
+        handleDatabaseError(res, error, 'Failed to delete region');
       }
-
-      res.json({
-        success: true,
-        message: 'Region deleted successfully',
-      });
-    } catch (error) {
-      console.error('Error deleting region:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-      });
     }
   }
 }

@@ -10,10 +10,6 @@ export const createRegionSchema = z.object({
 });
 
 export const updateRegionSchema = z.object({
-  id: z
-    .number({ message: 'Id must be a number' })
-    .int()
-    .positive('Id must be positive'),
   name: z
     .string()
     .trim()

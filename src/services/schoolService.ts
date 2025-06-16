@@ -130,7 +130,7 @@ export class SchoolService {
 
       return Number(result.numDeletedRows) > 0;
     } catch (error) {
-      databaseErrorThrower('Failed to get school', error);
+      databaseErrorThrower('Failed to delete school', error);
     }
 
     return;
