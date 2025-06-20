@@ -41,20 +41,20 @@ export class SchoolService {
 
       // Apply filters
       if (
-        query.ownership_type !== undefined &&
+        query.ownershipType !== undefined &&
         Object.values(OwnershipType).includes(
-          query.ownership_type as OwnershipType
+          query.ownershipType as OwnershipType
         )
       ) {
         dbQuery = dbQuery.where(
-          'ownership_type',
+          'ownershipType',
           '=',
-          query.ownership_type as OwnershipType
+          query.ownershipType as OwnershipType
         );
       }
 
-      if (query.region_id) {
-        dbQuery = dbQuery.where('region_id', '=', query.region_id);
+      if (query.regionId) {
+        dbQuery = dbQuery.where('regionId', '=', query.regionId);
       }
 
       if (query.search) {

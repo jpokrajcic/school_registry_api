@@ -29,10 +29,10 @@ export interface SchoolTable {
   id: Generated<number>;
   name: string;
   address: string;
-  region_id: number;
+  regionId: number;
   email: string;
   phone: string;
-  ownership_type: OwnershipType;
+  ownershipType: OwnershipType;
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
 }
