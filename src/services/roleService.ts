@@ -79,7 +79,7 @@ export class RoleService {
       const updateData: RoleUpdate = {
         ...input,
         description: input.description ?? '',
-        updated_at: new Date(),
+        updatedAt: new Date(),
       };
 
       return await db

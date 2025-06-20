@@ -33,14 +33,14 @@ export interface SchoolTable {
   email: string;
   phone: string;
   ownershipType: OwnershipType;
-  created_at: Generated<Date>;
-  updated_at: Generated<Date>;
+  createdAt: Generated<Date>;
+  updatedAt: Generated<Date>;
 }
 
 export interface MigrationTable {
   id: Generated<number>;
   name: string;
-  executed_at: Generated<Date>;
+  executedAt: Generated<Date>;
 }
 
 export interface UserTable {
@@ -66,8 +66,8 @@ export interface RoleTable {
   id: Generated<number>;
   name: string;
   description: string;
-  created_at: Generated<Date>;
-  updated_at: Generated<Date>;
+  createdAt: Generated<Date>;
+  updatedAt: Generated<Date>;
 }
 
 export interface StudentTable {

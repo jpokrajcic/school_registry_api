@@ -71,7 +71,7 @@ export class SchoolService {
       // Apply pagination and ordering
       const schools = await dbQuery
         .selectAll()
-        .orderBy('created_at', 'desc')
+        .orderBy('createdAt', 'desc')
         .limit(query.limit || 10)
         .offset(((query.page || 1) - 1) * (query.limit || 10))
         .execute();
@@ -105,7 +105,7 @@ export class SchoolService {
     try {
       const updateData: SchoolUpdate = {
         ...input,
-        updated_at: new Date(),
+        updatedAt: new Date(),
       };
 
       return await db
