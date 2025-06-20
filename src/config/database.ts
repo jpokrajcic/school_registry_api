@@ -1,4 +1,4 @@
-import { Kysely, PostgresDialect } from 'kysely';
+import { CamelCasePlugin, Kysely, PostgresDialect } from 'kysely';
 import { Pool } from 'pg';
 import { type Database } from '../types/database';
 
@@ -25,4 +25,6 @@ const dialect = new PostgresDialect({
 
 export const db = new Kysely<Database>({
   dialect,
+  plugins: [new CamelCasePlugin()], // This plugin automatically converts snake_case to camelCase for column names
+  // and vice versa when inserting data.
 });

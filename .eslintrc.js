@@ -21,6 +21,21 @@ module.exports = {
     '@typescript-eslint/no-non-null-assertion': 'warn',
     'prefer-const': 'error',
     'no-var': 'error',
+    '@typescript-eslint/naming-convention': [
+      'error',
+      {
+        selector: 'interface',
+        format: ['PascalCase'],
+      },
+      {
+        selector: 'property',
+        format: ['camelCase'],
+      },
+      {
+        selector: 'method',
+        format: ['camelCase'],
+      },
+    ],
   },
   env: {
     node: true,

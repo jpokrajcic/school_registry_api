@@ -2,7 +2,9 @@ import bcrypt from 'bcrypt';
 import { db } from '../config/database';
 import { databaseErrorThrower } from '../middleware/errorHandler';
 import {
+  SafeUserSchema,
   type CreateUserInput,
+  type SafeUserOutput,
   type UpdateUserInput,
   type UserParams,
   type UserQuery,
@@ -14,29 +16,33 @@ import {
 } from '../types/database';
 
 export class UserService {
-  async createUser(input: CreateUserInput): Promise<SafeUser | undefined> {
+  async createUser(
+    input: CreateUserInput
+  ): Promise<SafeUserOutput | undefined> {
     try {
       const hash = await bcrypt.hash(input.password, 12);
 
       const newUser: NewUser = {
         email: input.email,
-        password_hash: hash, // Make suxre to hash password before storing in production!
-        role_id: input.role_id,
-        school_id: input.school_id ?? null,
+        password_hash: hash, // Make sure to hash password before storing in production!
+        roleId: input.roleId,
+        schoolId: input.schoolId ?? null,
       };
 
-      return await db
+      const result = await db
         .insertInto('users')
         .values(newUser)
         .returning([
           'id',
           'email',
-          'role_id',
-          'school_id',
-          'created_at',
-          'updated_at',
-        ]) // select only safe fields
+          'roleId',
+          'schoolId',
+          'createdAt',
+          'updatedAt',
+        ])
         .executeTakeFirstOrThrow();
+
+      return SafeUserSchema.parse(result);
     } catch (error) {
       databaseErrorThrower('Failed to create user', error);
     }
@@ -52,12 +58,12 @@ export class UserService {
       let baseQuery = db.selectFrom('users');
 
       // Apply filters
-      if (query.role_id !== undefined && typeof query.role_id === 'number') {
-        baseQuery = baseQuery.where('role_id', '=', query.role_id);
+      if (query.roleId !== undefined && typeof query.roleId === 'number') {
+        baseQuery = baseQuery.where('roleId', '=', query.roleId);
       }
 
-      if (query.school_id) {
-        baseQuery = baseQuery.where('school_id', '=', query.school_id);
+      if (query.schoolId) {
+        baseQuery = baseQuery.where('schoolId', '=', query.schoolId);
       }
 
       if (query.search) {
@@ -73,15 +79,8 @@ export class UserService {
 
       // Get users with pagination
       const users = await baseQuery
-        .select([
-          'id',
-          'email',
-          'role_id',
-          'school_id',
-          'created_at',
-          'updated_at',
-        ])
-        .orderBy('created_at', 'desc')
+        .select(['id', 'email', 'roleId', 'schoolId', 'createdAt', 'updatedAt'])
+        .orderBy('createdAt', 'desc')
         .limit(query.limit || 10)
         .offset(((query.page || 1) - 1) * (query.limit || 10))
         .execute();
@@ -98,14 +97,7 @@ export class UserService {
     try {
       return await db
         .selectFrom('users')
-        .select([
-          'id',
-          'email',
-          'role_id',
-          'school_id',
-          'created_at',
-          'updated_at',
-        ])
+        .select(['id', 'email', 'roleId', 'schoolId', 'createdAt', 'updatedAt'])
         .where('id', '=', id)
         .executeTakeFirst();
     } catch (error) {
@@ -122,23 +114,25 @@ export class UserService {
     try {
       const updateData: UserUpdate = {
         ...input,
-        school_id: input.school_id === undefined ? null : input.school_id,
-        updated_at: new Date(),
+        schoolId: input.schoolId === undefined ? null : input.schoolId,
+        updatedAt: new Date(),
       };
 
-      return await db
+      const updatedUser = await db
         .updateTable('users')
         .set(updateData)
         .where('id', '=', id)
         .returning([
           'id',
           'email',
-          'role_id',
-          'school_id',
-          'created_at',
-          'updated_at',
+          'roleId',
+          'schoolId',
+          'createdAt',
+          'updatedAt',
         ])
         .executeTakeFirst();
+
+      return updatedUser;
     } catch (error) {
       databaseErrorThrower('Failed to update user', error);
     }

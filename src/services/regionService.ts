@@ -38,8 +38,8 @@ export class RegionService {
       let dbQuery = db.selectFrom('regions');
 
       // Apply filters
-      if (query.is_city !== undefined) {
-        dbQuery = dbQuery.where('is_city', '=', query.is_city);
+      if (query.isCity !== undefined) {
+        dbQuery = dbQuery.where('isCity', '=', query.isCity);
       }
 
       if (query.search) {
@@ -56,7 +56,7 @@ export class RegionService {
       // Apply pagination and ordering
       const regions = await dbQuery
         .selectAll()
-        .orderBy('created_at', 'desc')
+        .orderBy('createdAt', 'desc')
         .limit(query.limit || 10)
         .offset(((query.page || 1) - 1) * (query.limit || 10))
         .execute();
@@ -89,7 +89,7 @@ export class RegionService {
     try {
       const updateData: RegionUpdate = {
         ...input,
-        updated_at: new Date(),
+        updatedAt: new Date(),
       };
 
       return await db

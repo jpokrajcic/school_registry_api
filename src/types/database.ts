@@ -11,13 +11,18 @@ export enum OwnershipType {
   Private = 'private',
 }
 
+export enum Gender {
+  Male = 'male',
+  Female = 'female',
+}
+
 // Interfaces
 export interface RegionTable {
   id: Generated<number>;
   name: string;
-  is_city: Generated<boolean>;
-  created_at: Generated<Date>;
-  updated_at: Generated<Date>;
+  isCity: Generated<boolean>;
+  createdAt: Generated<Date>;
+  updatedAt: Generated<Date>;
 }
 
 export interface SchoolTable {
@@ -42,19 +47,19 @@ export interface UserTable {
   id: Generated<number>;
   email: string;
   password_hash: string;
-  role_id: number;
-  school_id: number | null; // nullable for ministry or regional users
-  created_at: Generated<Date>;
-  updated_at: Generated<Date>;
+  roleId: number;
+  schoolId: number | null; // nullable for ministry or regional users
+  createdAt: Generated<Date>;
+  updatedAt: Generated<Date>;
 }
 
 export type SafeUserNonTable = {
   id: Generated<number>;
   email: string;
-  role_id: number;
-  school_id: number | null;
-  created_at: Date;
-  updated_at: Date;
+  roleId: number;
+  schoolId: number | null;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 export interface RoleTable {
@@ -65,12 +70,32 @@ export interface RoleTable {
   updated_at: Generated<Date>;
 }
 
+export interface StudentTable {
+  id: Generated<number>;
+  first_name: string;
+  middle_name: string;
+  last_name: string;
+  city: string;
+  post_code: string;
+  address: string;
+  phone: string | null;
+  email: string | null;
+  mobile: string | null;
+  gender: Gender;
+  date_of_birth: Date | null;
+  student_number: string;
+  school_id: number | null;
+  enrollment_date: Date | null;
+  active: boolean;
+}
+
 export interface Database {
   regions: RegionTable;
   schools: SchoolTable;
   migrations: MigrationTable;
   users: UserTable;
   roles: RoleTable;
+  students: StudentTable;
 }
 
 export type Region = Selectable<RegionTable>;
@@ -92,3 +117,7 @@ export type UserUpdate = Updateable<UserTable>;
 export type Role = Selectable<RoleTable>;
 export type NewRole = Insertable<RoleTable>;
 export type RoleUpdate = Updateable<RoleTable>;
+
+export type Student = Selectable<StudentTable>;
+export type NewStudent = Insertable<StudentTable>;
+export type StudentUpdate = Updateable<StudentTable>;
