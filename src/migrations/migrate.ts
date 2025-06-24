@@ -2,7 +2,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { db } from '../config/database';
 import { Kysely, sql } from 'kysely';
-import { getSrcDirname } from '../utils/path';
+import { getSrcDirname } from '../utils/pathUtils';
 
 interface Migration {
   name: string;

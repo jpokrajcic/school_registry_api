@@ -1,6 +1,6 @@
 import { createLogger, format, transports } from 'winston';
 import path from 'path';
-import { getSrcDirname } from './utils/path';
+import { getSrcDirname } from './utils/pathUtils';
 
 const { combine, timestamp, errors, colorize, printf } = format;
 

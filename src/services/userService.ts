@@ -4,21 +4,18 @@ import { databaseErrorThrower } from '../middleware/errorHandler';
 import {
   SafeUserSchema,
   type CreateUserInput,
-  type SafeUserOutput,
   type UpdateUserInput,
-  type UserParams,
   type UserQuery,
 } from '../schemas/userSchema';
 import {
   type NewUser,
   type UserUpdate,
   type SafeUser,
+  type User,
 } from '../types/database';
 
 export class UserService {
-  async createUser(
-    input: CreateUserInput
-  ): Promise<SafeUserOutput | undefined> {
+  async createUser(input: CreateUserInput): Promise<SafeUser | undefined> {
     try {
       const hash = await bcrypt.hash(input.password, 12);
 
@@ -93,12 +90,40 @@ export class UserService {
     return;
   }
 
-  async getUserById(id: number): Promise<UserParams | undefined> {
+  async getUserById(id: number): Promise<SafeUser | undefined> {
     try {
       return await db
         .selectFrom('users')
         .select(['id', 'email', 'roleId', 'schoolId', 'createdAt', 'updatedAt'])
         .where('id', '=', id)
+        .executeTakeFirst();
+    } catch (error) {
+      databaseErrorThrower('Failed to get user', error);
+    }
+
+    return;
+  }
+
+  async getUserByEmail(email: string): Promise<SafeUser | undefined> {
+    try {
+      return await db
+        .selectFrom('users')
+        .select(['id', 'email', 'roleId', 'schoolId', 'createdAt', 'updatedAt'])
+        .where('email', '=', email)
+        .executeTakeFirst();
+    } catch (error) {
+      databaseErrorThrower('Failed to get user', error);
+    }
+
+    return;
+  }
+
+  async getFullUserByEmail(email: string): Promise<User | undefined> {
+    try {
+      return await db
+        .selectFrom('users')
+        .selectAll()
+        .where('email', '=', email)
         .executeTakeFirst();
     } catch (error) {
       databaseErrorThrower('Failed to get user', error);
