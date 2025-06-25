@@ -1,9 +1,18 @@
 import Redis from 'ioredis';
+import dotenv from 'dotenv';
+import path from 'path';
 
 let redisClient: Redis | null = null;
 
 export function getRedisClient(): Redis {
   if (!redisClient) {
+    const envPath =
+      process.env['NODE_ENV'] === 'production'
+        ? '.env.production'
+        : '.env.development';
+
+    dotenv.config({ path: path.resolve(process.cwd(), envPath) });
+
     // Redis client setup
     redisClient = new Redis({
       host: process.env['REDIS_HOST'] || 'localhost',

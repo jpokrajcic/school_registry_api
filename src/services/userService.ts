@@ -21,7 +21,7 @@ export class UserService {
 
       const newUser: NewUser = {
         email: input.email,
-        password_hash: hash, // Make sure to hash password before storing in production!
+        passwordHash: hash, // Make sure to hash password before storing in production!
         roleId: input.roleId,
         schoolId: input.schoolId ?? null,
       };

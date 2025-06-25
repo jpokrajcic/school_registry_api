@@ -11,6 +11,8 @@ import { SecurityConfig } from './config/securityConfig';
 import { LoggingConfig } from './config/loggingConfig';
 import { ParsingConfig } from './config/parsingConfig';
 import { getRedisClient } from './redis/redisClient';
+// import { AuthController } from './controllers/authController';
+// import { AuthService } from './services/authService';
 import { authRoutes } from './routes/authRoutes';
 
 let server: Server;
@@ -28,6 +30,7 @@ const app: Express = express();
 const PORT = process.env['PORT'] || 3000;
 const redis = getRedisClient();
 
+// const authController = new AuthController(new AuthService(redis));
 /******************************/
 //  MIDDLEWARE CONFIGURATION  //
 /*****************************/
@@ -43,6 +46,10 @@ LoggingConfig.configureLoggingMiddleware(app);
 
 // Routes
 app.use('/api/auth', authRoutes);
+// app.post('/api/auth/register', authController.register);
+// app.post('/api/auth/login', authController.login);
+// app.get('/api/auth/logout', authController.logout);
+
 app.use('/api/roles', roleRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/regions', regionRoutes);

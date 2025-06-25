@@ -1,5 +1,5 @@
 import { handleValidationError } from '../middleware/errorHandler';
-import e, { type Request, type Response } from 'express';
+import { type Request, type Response } from 'express';
 import { handleDatabaseError } from '../middleware/errorHandler';
 import { userService } from '../services/userService';
 import { createUserSchema, type SafeUserOutput } from '../schemas/userSchema';
@@ -14,25 +14,8 @@ export class AuthController {
     this.authService = authService;
   }
 
-  // CSRF Token endpoint
-  //   async getCSRFToken(req: AuthenticatedRequest, res: Response): Promise<void> {
-  //     try {
-  //       if (!req.user) {
-  //         res.status(401).json({ error: 'User not authenticated' });
-  //         return;
-  //       }
-
-  //       const csrfToken = this.authService.generateCSRFToken();
-  //       await this.authService.storeCSRFToken(csrfToken, String(req.user.id));
-
-  //       res.json({ csrfToken });
-  //     } catch (error) {
-  //       handleDatabaseError(res, error, 'Failed to generate CSRF token');
-  //     }
-  //   }
-
   // Register
-  async register(req: Request, res: Response): Promise<void> {
+  register = async (req: Request, res: Response): Promise<void> => {
     const validationResult = await createUserSchema.safeParseAsync(req.body);
 
     if (handleValidationError('REGISTER USER', validationResult, res)) return;
@@ -86,10 +69,10 @@ export class AuthController {
         handleDatabaseError(res, error, 'Failed to register user');
       }
     }
-  }
+  };
 
   // Login
-  async login(req: Request, res: Response): Promise<void> {
+  login = async (req: Request, res: Response): Promise<void> => {
     const validationResult = loginSchema.safeParse(req.body);
 
     if (handleValidationError('LOGIN USER', validationResult, res)) return;
@@ -111,7 +94,7 @@ export class AuthController {
         // Verify password
         const isValidPassword = await this.authService.comparePassword(
           validationResult.data.password,
-          user.password_hash
+          user.passwordHash
         );
         if (!isValidPassword) {
           res.status(401).json({ error: 'Invalid credentials' });
@@ -131,7 +114,7 @@ export class AuthController {
         // Set secure cookies
         this.authService.setSecureCookies(res, accessToken, refreshToken);
 
-        const { password_hash, ...userWithoutPassword } = user;
+        const { passwordHash, ...userWithoutPassword } = user;
         res.status(200).json({
           success: true,
           data: userWithoutPassword, // TODO return user profile here
@@ -142,7 +125,7 @@ export class AuthController {
         handleDatabaseError(res, error, 'Failed to log in');
       }
     }
-  }
+  };
 
   // Refresh tokens
   async refreshToken(req: Request, res: Response): Promise<void> {
@@ -210,7 +193,7 @@ export class AuthController {
   }
 
   // Logout
-  async logout(req: Request, res: Response): Promise<void> {
+  logout = async (req: Request, res: Response): Promise<void> => {
     try {
       const refreshToken = req.cookies?.refreshToken;
 
@@ -232,7 +215,7 @@ export class AuthController {
     } catch (error) {
       handleDatabaseError(res, error, 'Failed to log out');
     }
-  }
+  };
 
   // TODO Implement this later
   // Logout from all devices

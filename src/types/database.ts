@@ -46,7 +46,7 @@ export interface MigrationTable {
 export interface UserTable {
   id: Generated<number>;
   email: string;
-  password_hash: string;
+  passwordHash: string;
   roleId: number;
   schoolId: number | null; // nullable for ministry or regional users
   createdAt: Generated<Date>;

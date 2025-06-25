@@ -1,4 +1,6 @@
 import bcrypt from 'bcrypt';
+import dotenv from 'dotenv';
+import path from 'path';
 import jwt, { type JwtPayload } from 'jsonwebtoken';
 import crypto from 'crypto';
 import Redis from 'ioredis';
@@ -6,39 +8,47 @@ import { type Response, type NextFunction } from 'express';
 import type { User } from '../types/database';
 import type { AuthTokens, AuthenticatedRequest } from '../types/general';
 
-const JWT_SECRET: string = process.env['JWT_SECRET'] || '';
-const JWT_EXPIRES_IN: number = process.env['JWT_EXPIRES_IN']
-  ? parseInt(process.env['JWT_EXPIRES_IN'], 10)
-  : 900; // 15 minutes in seconds
-const JWT_REFRESH_SECRET: string = process.env['JWT_REFRESH_SECRET'] || '';
-const JWT_REFRESH_EXPIRES_IN: number = process.env['JWT_REFRESH_EXPIRES_IN']
-  ? parseInt(process.env['JWT_REFRESH_EXPIRES_IN'], 10)
-  : 604800; // 7 days in seconds
-const REFRESH_TOKEN_REDIS_TTL: number = process.env['REFRESH_TOKEN_REDIS_TTL']
-  ? parseInt(process.env['REFRESH_TOKEN_REDIS_TTL'], 10)
-  : 604800; // 7 days in seconds
-const CSRF_TOKEN_TTL: number = process.env['CSRF_TOKEN_TTL']
-  ? parseInt(process.env['CSRF_TOKEN_TTL'], 10)
-  : 86400; // 24 hours in seconds
-const NODE_ENV: string = process.env['NODE_ENV'] || 'development';
-
 export class AuthService {
   private redis: Redis;
+  private JWT_SECRET: string;
+  private JWT_EXPIRES_IN: number;
+  private JWT_REFRESH_SECRET: string;
+  private JWT_REFRESH_EXPIRES_IN: number;
+  private REFRESH_TOKEN_REDIS_TTL: number;
+  private CSRF_TOKEN_TTL: number;
+  private NODE_ENV: string;
 
   constructor(redis: Redis) {
     this.redis = redis;
+
+    // Load environment variables
+    this.JWT_SECRET = process.env['JWT_SECRET'] || '';
+    this.JWT_EXPIRES_IN = process.env['JWT_EXPIRES_IN']
+      ? parseInt(process.env['JWT_EXPIRES_IN'], 10)
+      : 900; // 15 minutes in seconds
+    this.JWT_REFRESH_SECRET = process.env['JWT_REFRESH_SECRET'] || '';
+    this.JWT_REFRESH_EXPIRES_IN = process.env['JWT_REFRESH_EXPIRES_IN']
+      ? parseInt(process.env['JWT_REFRESH_EXPIRES_IN'], 10)
+      : 604800; // 7 days in seconds
+    this.REFRESH_TOKEN_REDIS_TTL = process.env['REFRESH_TOKEN_REDIS_TTL']
+      ? parseInt(process.env['REFRESH_TOKEN_REDIS_TTL'], 10)
+      : 604800; // 7 days in seconds
+    this.CSRF_TOKEN_TTL = process.env['CSRF_TOKEN_TTL']
+      ? parseInt(process.env['CSRF_TOKEN_TTL'], 10)
+      : 86400; // 24 hours in seconds
+    this.NODE_ENV = process.env['NODE_ENV'] || 'development';
   }
 
   // JWT utility functions
   generateTokens(userId: number): AuthTokens {
-    const accessToken = jwt.sign({ userId }, JWT_SECRET as jwt.Secret, {
-      expiresIn: JWT_EXPIRES_IN,
+    const accessToken = jwt.sign({ userId }, this.JWT_SECRET as jwt.Secret, {
+      expiresIn: this.JWT_EXPIRES_IN,
     });
     const refreshToken = jwt.sign(
       { userId },
-      JWT_REFRESH_SECRET as jwt.Secret,
+      this.JWT_REFRESH_SECRET as jwt.Secret,
       {
-        expiresIn: JWT_REFRESH_EXPIRES_IN,
+        expiresIn: this.JWT_REFRESH_EXPIRES_IN,
       }
     );
     return { accessToken, refreshToken };
@@ -46,7 +56,7 @@ export class AuthService {
 
   verifyAccessToken(token: string): JwtPayload | null {
     try {
-      return jwt.verify(token, JWT_SECRET) as JwtPayload;
+      return jwt.verify(token, this.JWT_SECRET) as JwtPayload;
     } catch (error) {
       return null;
     }
@@ -54,7 +64,7 @@ export class AuthService {
 
   verifyRefreshToken(token: string): JwtPayload | null {
     try {
-      return jwt.verify(token, JWT_REFRESH_SECRET) as JwtPayload;
+      return jwt.verify(token, this.JWT_REFRESH_SECRET) as JwtPayload;
     } catch (error) {
       return null;
     }
@@ -118,7 +128,7 @@ export class AuthService {
   // CSRF Token storage in Redis
   async storeCSRFToken(token: string, userId: number): Promise<void> {
     const key = `csrf_token:${userId}`;
-    await this.redis.setex(key, CSRF_TOKEN_TTL, token);
+    await this.redis.setex(key, this.CSRF_TOKEN_TTL, token);
   }
 
   async getCSRFToken(userId: string): Promise<string | null> {
@@ -134,7 +144,7 @@ export class AuthService {
   // Redis utility functions for refresh tokens
   async storeRefreshToken(refreshToken: string, userId: number): Promise<void> {
     const key = `refresh_token:${refreshToken}`;
-    await this.redis.setex(key, REFRESH_TOKEN_REDIS_TTL, userId);
+    await this.redis.setex(key, this.REFRESH_TOKEN_REDIS_TTL, userId);
   }
 
   async getRefreshTokenUserId(refreshToken: string): Promise<string | null> {
@@ -165,13 +175,13 @@ export class AuthService {
     accessToken: string,
     refreshToken: string
   ): void {
-    const isProduction = NODE_ENV === 'production';
+    const isProduction = this.NODE_ENV === 'production';
 
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: isProduction,
       sameSite: 'strict',
-      maxAge: JWT_EXPIRES_IN,
+      maxAge: this.JWT_EXPIRES_IN,
       path: '/',
     });
 
@@ -179,7 +189,7 @@ export class AuthService {
       httpOnly: true,
       secure: isProduction,
       sameSite: 'strict',
-      maxAge: JWT_REFRESH_EXPIRES_IN,
+      maxAge: this.JWT_REFRESH_EXPIRES_IN,
       path: '/',
     });
   }
@@ -190,8 +200,8 @@ export class AuthService {
   }
 
   // Helper function to exclude password from user object
-  excludePassword(user: User): Omit<User, 'password_hash'> {
-    const { password_hash, ...userWithoutPassword } = user;
+  excludePassword(user: User): Omit<User, 'passwordHash'> {
+    const { passwordHash, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }
 
