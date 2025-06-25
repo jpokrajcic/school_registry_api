@@ -1,108 +1,431 @@
-# Full-Stack Boilerplate
+# School Registry Backend
 
-A modern full-stack boilerplate with Node.js, Express, TypeScript, Kysely, and PostgreSQL.
+A comprehensive Node.js backend API for managing educational institutions, built with Express.js, TypeScript, PostgreSQL, and Redis.
 
-## Tech Stack
+## 🚀 Features
+
+- **User Management**: Authentication and authorization with JWT
+- **School Management**: CRUD operations for schools with regional organization
+- **Role-Based Access Control**: Different user roles (Ministry Admin, Regional Admin, School Admin, Teacher)
+- **Regional Organization**: Hierarchical management of regions and cities
+- **Secure Authentication**: JWT with refresh tokens and CSRF protection
+- **Input Validation**: Comprehensive request validation with Zod
+- **Database Migrations**: Version-controlled database schema management
+- **Comprehensive Testing**: Unit and integration tests with Vitest
+- **Security**: Rate limiting, CORS, helmet security headers
+- **Caching**: Redis integration for session management
+
+## 🛠 Tech Stack
 
 - **Runtime**: Node.js
 - **Framework**: Express.js
 - **Language**: TypeScript
 - **Database**: PostgreSQL
-- **Query builder**: Kysely
-- **Code Quality**: ESLint + Prettier
-- **Development**: Nodemon
+- **Query Builder**: Kysely
+- **Cache**: Redis
+- **Authentication**: JWT (jsonwebtoken)
+- **Validation**: Zod
+- **Testing**: Vitest
+- **Security**: Helmet, CORS, express-rate-limit
+- **Logging**: Winston, Morgan
 
-## Features
+## 📋 Prerequisites
 
-- ✅ TypeScript configuration with strict mode
-- ✅ Express.js server with middleware setup
-- ✅ Kysely Typescript query builder with PostgreSQL
-- ✅ ESLint + Prettier for code formatting
-- ✅ Error handling middleware
-- ✅ CORS and security headers (Helmet)
-- ✅ HTTP Request logging in console or in file (Morgan)
-- ✅ Environment variable management
-- ✅ Graceful shutdown handling
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js (v18 or higher)
-- PostgreSQL database
+- Node.js (v18+ recommended)
+- PostgreSQL (v13+)
+- Redis (v6+)
 - npm or yarn
 
-### Installation
+## 🔧 Installation
 
-1. **Clone and setup:**
-   git clone <your-repo>
-   cd fullstack-boilerplate
+1. **Clone the repository**
+
+   ```bash
+   git clone <repository-url>
+   cd school_registry_backend
+   ```
+
+2. **Install dependencies**
+
+   ```bash
    npm install
+   ```
 
-2. **Environment setup:**
-   cp .env .env.development
-   cp .env .env.production
+3. **Set up environment variables**
 
-   # Edit .env with your database credentials
+   ```bash
+   cp .env.example .env
+   cp .env.example .env.development
+   cp .env.example .env.production
+   cp .env.example .env.test
+   ```
 
-3. **Database setup:**
+4. **Configure your environment files**
 
-   # Install postgres
+   ```bash
+   # .env.development
+   DATABASE_URL="postgresql://username:password@localhost:5432/school_management"
+   DB_HOST=localhost
+   DB_USER=your_username
+   DB_PORT=5432
+   DB_NAME=school_management
+   DB_PASS=your_password
 
-   brew install postgresql
+   # Server
+   PORT=3000
+   NODE_ENV=development
 
-   # Start postgres
+   # JWT Configuration
+   JWT_SECRET=your_jwt_secret_key_here
+   JWT_REFRESH_SECRET=your_refresh_secret_key_here
+   CSRF_SECRET=your_csrf_secret_key_here
+   JWT_EXPIRES_IN=900
+   JWT_REFRESH_EXPIRES_IN=604800
+   REFRESH_TOKEN_REDIS_TTL=604800
+   CSRF_TOKEN_TTL=86400
 
-   brew services start postgresql
+   # Redis
+   REDIS_HOST=localhost
+   REDIS_PORT=6379
+   REDIS_PASSWORD=your_redis_password
 
-   # Install DBeaver and connect to database
+   # CORS
+   ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+   ```
 
-   # Run migrations (for production)
+5. **Set up databases**
 
-   npm run db:migrate
+   ```bash
+   # Create development database
+   createdb school_management
 
-4. **Start development server:**
+   # Create test database
+   createdb school_management_test
+   ```
+
+6. **Run migrations**
+   ```bash
+   npm run migrate
+   ```
+
+## 🚀 Getting Started
+
+1. **Start development server**
+
+   ```bash
    npm run dev
+   ```
 
-The server will start on `http://localhost:3000`
+2. **Run tests**
 
-## Available Scripts
+   ```bash
+   npm test
+   ```
 
-- `npm run dev` - Start development server with hot reload
-- `npm run build` - Build TypeScript to JavaScript
-- `npm start` - Start production server
-- `npm run lint` - Run ESLint
-- `npm run lint:fix` - Fix ESLint errors
-- `npm run format` - Format code with Prettier
-- `npm run db:migrate` - Run database migrations
+3. **Build for production**
+   ```bash
+   npm run build
+   npm start
+   ```
 
-## API Endpoints
+## 📚 API Documentation
+
+### Authentication Endpoints
+
+```
+POST /api/auth/register - Register a new user
+POST /api/auth/login    - Login user
+POST /api/auth/logout   - Logout user
+POST /api/auth/refresh  - Refresh access token
+```
+
+### Region Endpoints
+
+```
+GET    /api/regions     - Get all regions (with pagination & filtering)
+POST   /api/regions     - Create a new region
+GET    /api/regions/:id - Get region by ID
+PUT    /api/regions/:id - Update region
+DELETE /api/regions/:id - Delete region
+```
+
+### Role Endpoints
+
+```
+GET    /api/roles     - Get all roles (with pagination & filtering)
+POST   /api/roles     - Create a new role
+GET    /api/roles/:id - Get role by ID
+PUT    /api/roles/:id - Update role
+DELETE /api/roles/:id - Delete role
+```
+
+### School Endpoints
+
+```
+GET    /api/schools     - Get all schools (with pagination & filtering)
+POST   /api/schools     - Create a new school
+GET    /api/schools/:id - Get school by ID
+PUT    /api/schools/:id - Update school
+DELETE /api/schools/:id - Delete school
+```
+
+### User Endpoints
+
+```
+GET    /api/users     - Get all users (with pagination & filtering)
+POST   /api/users     - Create a new user
+GET    /api/users/:id - Get user by ID
+PUT    /api/users/:id - Update user
+DELETE /api/users/:id - Delete user
+```
+
+## 🗃 Database Schema
 
 ### Regions
 
-- `GET /api/regiosn` - Get all regions
-- `GET /api/regions/:id` - Get region by ID
-- `POST /api/regions` - Create new region
-- `PUT /api/regions/:id` - Update region
-- `DELETE /api/regions/:id` - Delete region
+- `id` (Primary Key)
+- `name` (Unique)
+- `isCity` (Boolean)
+- `createdAt`, `updatedAt`
 
-## Development Tips
+### Roles
 
-1. **Database Changes**: After modifying `schema.prisma`, run `npm run db:generate` to update the Prisma client
-2. **Code Quality**: The project is configured with strict TypeScript, ESLint, and Prettier
-3. **Error Handling**: All async route handlers are wrapped with `asyncHandler` for automatic error catching
-4. **Environment**: Check `.env.example` for required environment variables
+- `id` (Primary Key)
+- `name` (Unique)
+- `description`
+- `createdAt`, `updatedAt`
 
-## Production Deployment
+### Schools
 
-1. Set environment variables
-2. Run `npm run build`
-3. Run database migrations: `npm run db:migrate`
-4. Start with `npm start`
+- `id` (Primary Key)
+- `name` (Unique)
+- `address`
+- `regionId` (Foreign Key → regions.id)
+- `email`
+- `phone`
+- `ownershipType` (public/private)
+- `createdAt`, `updatedAt`
 
-## Contributing
+### Users
 
-1. Follow the existing code style (ESLint + Prettier)
-2. Add proper TypeScript types
-3. Include error handling
-4. Test your changes
+- `id` (Primary Key)
+- `email` (Unique)
+- `passwordHash`
+- `roleId` (Foreign Key → roles.id)
+- `schoolId` (Foreign Key → schools.id, nullable)
+- `createdAt`, `updatedAt`
+
+## 🧪 Testing
+
+The project includes comprehensive test coverage:
+
+```bash
+# Run all tests
+npm test
+
+# Run specific test suites
+npm run test:services
+npm run test:region
+npm run test:role
+npm run test:school
+npm run test:user
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with UI
+npm run test:ui
+```
+
+### Test Structure
+
+```
+src/tests/
+├── setup.ts                    # Test environment setup
+├── helpers/
+│   ├── seedData.ts             # Test data creation helpers
+│   ├── scenarioSeeds.ts        # Specific test scenarios
+│   └── dbHealthCheck.ts        # Database health verification
+└── services/
+    ├── regionService.test.ts   # Region service tests
+    ├── roleService.test.ts     # Role service tests
+    ├── schoolService.test.ts   # School service tests
+    └── userService.test.ts     # User service tests
+```
+
+## 🔒 Security Features
+
+- **JWT Authentication**: Secure token-based authentication
+- **CSRF Protection**: Cross-site request forgery protection
+- **Rate Limiting**: API endpoint protection against abuse
+- **CORS Configuration**: Cross-origin resource sharing controls
+- **Helmet Security**: HTTP security headers
+- **Input Validation**: Comprehensive request validation
+- **Password Hashing**: bcrypt for secure password storage
+
+## 📁 Project Structure
+
+```
+src/
+├── config/
+│   ├── database.ts          # Database configuration
+│   ├── securityConfig.ts    # Security middleware setup
+│   ├── loggingConfig.ts     # Logging configuration
+│   └── parsingConfig.ts     # Body parsing configuration
+├── controllers/             # Request handlers
+├── services/               # Business logic layer
+├── routes/                 # API route definitions
+├── schemas/                # Zod validation schemas
+├── middleware/             # Custom middleware
+├── types/                  # TypeScript type definitions
+├── migrations/             # Database migrations
+├── redis/                  # Redis client configuration
+├── tests/                  # Test files
+└── index.ts               # Application entry point
+```
+
+## 🔄 Available Scripts
+
+```bash
+npm run dev          # Start development server with hot reload
+npm run build        # Build for production
+npm start            # Start production server
+npm test             # Run tests
+npm run test:watch   # Run tests in watch mode
+npm run test:ui      # Run tests with UI
+npm run migrate      # Run database migrations
+npm run migrate:down # Rollback last migration
+npm run lint         # Run ESLint
+npm run type-check   # Run TypeScript type checking
+```
+
+## 🌍 Environment Configuration
+
+The application supports multiple environments:
+
+- **Development**: `.env.development`
+- **Production**: `.env.production`
+- **Test**: `.env.test`
+
+Environment is determined by `NODE_ENV` variable.
+
+## 🐳 Docker Support
+
+```dockerfile
+# Dockerfile example
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+RUN npm run build
+EXPOSE 3000
+CMD ["npm", "start"]
+```
+
+## 📝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Development Guidelines
+
+- Write tests for new features
+- Follow TypeScript best practices
+- Use meaningful commit messages
+- Update documentation as needed
+- Ensure all tests pass before submitting PR
+
+## 🚨 Error Handling
+
+The application includes comprehensive error handling:
+
+- **Validation Errors**: Zod schema validation with detailed messages
+- **Database Errors**: Graceful handling of database operations
+- **Authentication Errors**: JWT and authorization error handling
+- **Rate Limiting**: Proper responses for rate-limited requests
+
+## 📊 Monitoring & Logging
+
+- **Winston**: Structured logging with different log levels
+- **Morgan**: HTTP request logging
+- **Error Tracking**: Comprehensive error logging and stack traces
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+1. **Database Connection Issues**
+
+   ```bash
+   # Check PostgreSQL is running
+   brew services list | grep postgres
+
+   # Check database exists
+   psql -l | grep school_management
+   ```
+
+2. **Redis Connection Issues**
+
+   ```bash
+   # Check Redis is running
+   redis-cli ping
+   ```
+
+3. **Migration Issues**
+
+   ```bash
+   # Reset database and re-run migrations
+   npm run migrate:reset
+   npm run migrate
+   ```
+
+4. **Test Database Issues**
+
+   ```bash
+   # Clean up test data
+   npm run test:cleanup
+
+   # Check database health
+   npm run test:db-check
+   ```
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 👥 Team
+
+- **Backend Developer**: [Josip Pokrajcic]
+- **Database Design**: [Josip Pokrajcic]
+- **Testing**: [Josip Pokrajcic]
+
+## 🆕 Changelog
+
+### Version 1.0.0
+
+- Initial release
+- Core CRUD operations for all entities
+- JWT authentication system
+- Comprehensive test suite
+- Database migrations
+- Security middleware
+
+## 🔮 Future Enhancements
+
+- [ ] Student management system
+- [ ] Grade/Class management
+- [ ] Attendance tracking
+- [ ] Report generation
+- [ ] Email notifications
+- [ ] File upload/management
+- [ ] Advanced analytics
+- [ ] Mobile API optimization
+- [ ] GraphQL support
+- [ ] Microservices architecture

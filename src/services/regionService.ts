@@ -16,7 +16,8 @@ export class RegionService {
   async createRegion(input: CreateRegionInput): Promise<Region | undefined> {
     try {
       const newRegion: NewRegion = {
-        ...input,
+        name: input.name,
+        isCity: input.isCity,
       };
 
       return await db
@@ -25,9 +26,20 @@ export class RegionService {
         .returningAll()
         .executeTakeFirstOrThrow();
     } catch (error) {
-      databaseErrorThrower('Failed to create region', error);
+      // Handle unique constraint violation
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        'constraint' in error &&
+        (error as any).code === '23505' &&
+        (error as any).constraint === 'regions_name_unique'
+      ) {
+        databaseErrorThrower('Region name already exists', error);
+      } else {
+        databaseErrorThrower('Failed to create region', error);
+      }
     }
-
     return;
   }
 
