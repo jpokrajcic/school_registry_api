@@ -1,4 +1,4 @@
-import type { User } from './database';
+import type { SafeUser } from './database';
 import { type Request } from 'express';
 
 export interface AuthTokens {
@@ -13,6 +13,6 @@ export interface JwtPayload {
 }
 
 export interface AuthenticatedRequest extends Request {
-  user?: User;
+  user?: SafeUser;
   csrfToken?: string;
 }

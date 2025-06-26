@@ -1,12 +1,10 @@
 import bcrypt from 'bcrypt';
-import dotenv from 'dotenv';
-import path from 'path';
 import jwt, { type JwtPayload } from 'jsonwebtoken';
 import crypto from 'crypto';
 import Redis from 'ioredis';
-import { type Response, type NextFunction } from 'express';
-import type { User } from '../types/database';
-import type { AuthTokens, AuthenticatedRequest } from '../types/general';
+import { type Response } from 'express';
+import type { AuthTokens } from '../types/general';
+import { userService } from './userService';
 
 export class AuthService {
   private redis: Redis;
@@ -70,12 +68,6 @@ export class AuthService {
     }
   }
 
-  // Password utilities
-  async hashPassword(password: string): Promise<string> {
-    const saltRounds = 12;
-    return await bcrypt.hash(password, saltRounds);
-  }
-
   async comparePassword(
     password: string,
     hashedPassword: string
@@ -83,46 +75,13 @@ export class AuthService {
     return await bcrypt.compare(password, hashedPassword);
   }
 
-  // Validation utilities
-  validatePassword(password: string): { isValid: boolean; error?: string } {
-    if (password.length < 8) {
-      return {
-        isValid: false,
-        error: 'Password must be at least 8 characters long',
-      };
-    }
-
-    const passwordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/;
-    if (!passwordRegex.test(password)) {
-      return {
-        isValid: false,
-        error:
-          'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
-      };
-    }
-
-    return { isValid: true };
-  }
-
-  validateEmail(email: string): { isValid: boolean; error?: string } {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return { isValid: false, error: 'Invalid email format' };
-    }
-    return { isValid: true };
-  }
-
   // CSRF Token utilities
   generateCSRFToken(): string {
     return crypto.randomBytes(32).toString('hex');
   }
 
-  verifyCSRFToken(token: string, sessionToken: string): boolean {
-    return crypto.timingSafeEqual(
-      Buffer.from(token),
-      Buffer.from(sessionToken)
-    );
+  verifyCSRFToken(token: string, storedToken: string): boolean {
+    return crypto.timingSafeEqual(Buffer.from(token), Buffer.from(storedToken));
   }
 
   // CSRF Token storage in Redis
@@ -177,20 +136,21 @@ export class AuthService {
   ): void {
     const isProduction = this.NODE_ENV === 'production';
 
-    res.cookie('accessToken', accessToken, {
+    const cookieOptions = {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'strict',
-      maxAge: this.JWT_EXPIRES_IN,
+      sameSite: 'strict' as const,
       path: '/',
+    };
+
+    res.cookie('accessToken', accessToken, {
+      ...cookieOptions,
+      maxAge: this.JWT_EXPIRES_IN * 1000, // Convert to milliseconds
     });
 
     res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'strict',
-      maxAge: this.JWT_REFRESH_EXPIRES_IN,
-      path: '/',
+      ...cookieOptions,
+      maxAge: this.JWT_REFRESH_EXPIRES_IN * 1000,
     });
   }
 
@@ -199,108 +159,65 @@ export class AuthService {
     res.clearCookie('refreshToken', { path: '/' });
   }
 
-  // Helper function to exclude password from user object
-  excludePassword(user: User): Omit<User, 'passwordHash'> {
-    const { passwordHash, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+  // Improved CSRF validation
+  async validateCSRFToken(token: string, userId: number): Promise<boolean> {
+    try {
+      const storedToken = await this.getCSRFToken(userId.toString());
+      if (!storedToken) return false;
+
+      // Verify csrf token
+      return this.verifyCSRFToken(token, storedToken);
+    } catch (error) {
+      console.error('CSRF validation error:', error);
+      return false;
+    }
   }
 
-  // Middleware factory methods
-  createAuthenticateMiddleware(users: User[]) {
-    return async (
-      req: AuthenticatedRequest,
-      res: Response,
-      next: NextFunction
-    ): Promise<void> => {
-      try {
-        // Try cookie first, then Authorization header
-        let token = req.cookies?.accessToken;
-
-        if (!token) {
-          const authHeader = req.headers['authorization'];
-          token = authHeader && authHeader.split(' ')[1];
-        }
-
-        if (!token) {
-          res.status(401).json({ error: 'Access token required' });
-          return;
-        }
-
-        const decoded = this.verifyAccessToken(token);
-        if (!decoded) {
-          res.status(403).json({ error: 'Invalid or expired access token' });
-          return;
-        }
-
-        const user = users.find(u => u.id === decoded['userId']);
-        if (!user) {
-          res.status(403).json({ error: 'User not found' });
-          return;
-        }
-
-        req.user = user;
-        next();
-      } catch (error) {
-        console.error('Authentication error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+  // Token refresh with rotation
+  async refreshTokens(refreshToken: string): Promise<{
+    success: boolean;
+    tokens?: AuthTokens;
+    csrfToken?: string;
+    error?: string;
+  }> {
+    try {
+      // Check if refresh token exists in Redis
+      const storedUserId = await this.getRefreshTokenUserId(refreshToken);
+      if (!storedUserId) {
+        return { success: false, error: 'Invalid refresh token' };
       }
-    };
-  }
 
-  createCSRFProtectionMiddleware() {
-    return async (
-      req: AuthenticatedRequest,
-      res: Response,
-      next: NextFunction
-    ): Promise<void> => {
-      try {
-        // Skip CSRF for GET, HEAD, OPTIONS
-        if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
-          return next();
-        }
-
-        const csrfToken = req.headers['x-csrf-token'] as string;
-
-        if (!csrfToken) {
-          res.status(403).json({ error: 'CSRF token required' });
-          return;
-        }
-
-        // Get user from token first
-        let token = req.cookies?.accessToken;
-        if (!token) {
-          const authHeader = req.headers['authorization'];
-          token = authHeader && authHeader.split(' ')[1];
-        }
-
-        if (!token) {
-          res
-            .status(401)
-            .json({ error: 'Access token required for CSRF validation' });
-          return;
-        }
-
-        const decoded = this.verifyAccessToken(token);
-        if (!decoded) {
-          res.status(403).json({ error: 'Invalid access token' });
-          return;
-        }
-
-        const storedCSRFToken = await this.getCSRFToken(decoded['userId']);
-        if (
-          !storedCSRFToken ||
-          !this.verifyCSRFToken(csrfToken, storedCSRFToken)
-        ) {
-          res.status(403).json({ error: 'Invalid CSRF token' });
-          return;
-        }
-
-        req.csrfToken = csrfToken;
-        next();
-      } catch (error) {
-        console.error('CSRF protection error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+      // Verify refresh token
+      const decoded = this.verifyRefreshToken(refreshToken);
+      if (!decoded || decoded['userId'] !== parseInt(storedUserId)) {
+        await this.deleteRefreshToken(refreshToken);
+        return { success: false, error: 'Token mismatch' };
       }
-    };
+
+      // Find user
+      const user = await userService.getUserById(decoded['userId']);
+      if (!user) {
+        await this.deleteRefreshToken(refreshToken);
+        return { success: false, error: 'User not found' };
+      }
+
+      // Generate new tokens
+      const newTokens = this.generateTokens(user.id);
+      const csrfToken = this.generateCSRFToken();
+
+      // Rotate refresh tokens
+      await this.deleteRefreshToken(refreshToken);
+      await this.storeRefreshToken(newTokens.refreshToken, user.id);
+      await this.storeCSRFToken(csrfToken, user.id);
+
+      return {
+        success: true,
+        tokens: newTokens,
+        csrfToken,
+      };
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      return { success: false, error: 'Token refresh failed' };
+    }
   }
 }

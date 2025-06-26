@@ -1,3 +1,4 @@
+import { type AuthenticatedRequest } from './../types/general';
 import { handleValidationError } from '../middleware/errorHandler';
 import { type Request, type Response } from 'express';
 import { handleDatabaseError } from '../middleware/errorHandler';
@@ -6,13 +7,38 @@ import { createUserSchema, type SafeUserOutput } from '../schemas/userSchema';
 import { loginSchema } from '../schemas/authSchema';
 import { AuthService } from '../services/authService';
 import { getRedisClient } from '../redis/redisClient';
+import { AuthMiddleware } from '../middleware/authMiddleware';
 
 export class AuthController {
-  private authService: AuthService;
+  public authService: AuthService;
 
   constructor(authService: AuthService) {
     this.authService = authService;
   }
+
+  // CSRF Token endpoint
+  getCSRFToken = async (
+    req: AuthenticatedRequest,
+    res: Response
+  ): Promise<void> => {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'User not authenticated' });
+        return;
+      }
+
+      const csrfToken = this.authService.generateCSRFToken();
+      await this.authService.storeCSRFToken(csrfToken, req.user.id);
+
+      res.status(200).json({
+        success: true,
+        message: 'CSRF token successfully generated',
+        csrfToken,
+      });
+    } catch (error) {
+      handleDatabaseError(res, error, 'Failed to generate CSRF token');
+    }
+  };
 
   // Register
   register = async (req: Request, res: Response): Promise<void> => {
@@ -46,18 +72,22 @@ export class AuthController {
         const newUser: SafeUserOutput = createdUser;
 
         // Generate tokens
-        const { accessToken, refreshToken } = this.authService.generateTokens(
-          newUser.id
-        );
-
-        await this.authService.storeRefreshToken(refreshToken, newUser.id);
-
-        // Generate CSRF token
+        const tokens = this.authService.generateTokens(createdUser.id);
         const csrfToken = this.authService.generateCSRFToken();
-        await this.authService.storeCSRFToken(csrfToken, newUser.id);
 
-        // Set secure cookies
-        this.authService.setSecureCookies(res, accessToken, refreshToken);
+        await Promise.all([
+          this.authService.storeRefreshToken(
+            tokens.refreshToken,
+            createdUser.id
+          ),
+          this.authService.storeCSRFToken(csrfToken, createdUser.id),
+        ]);
+
+        this.authService.setSecureCookies(
+          res,
+          tokens.accessToken,
+          tokens.refreshToken
+        );
 
         res.status(200).json({
           success: true,
@@ -101,23 +131,23 @@ export class AuthController {
           return;
         }
 
-        // Generate tokens
-        const { accessToken, refreshToken } = this.authService.generateTokens(
-          user.id
-        );
-        await this.authService.storeRefreshToken(refreshToken, user.id);
-
-        // Generate CSRF token
+        // Generate tokens and set secure cookies
+        const tokens = this.authService.generateTokens(user.id);
         const csrfToken = this.authService.generateCSRFToken();
-        await this.authService.storeCSRFToken(csrfToken, user.id);
 
-        // Set secure cookies
-        this.authService.setSecureCookies(res, accessToken, refreshToken);
+        await Promise.all([
+          this.authService.storeRefreshToken(tokens.refreshToken, user.id),
+          this.authService.storeCSRFToken(csrfToken, user.id),
+        ]);
 
-        const { passwordHash, ...userWithoutPassword } = user;
+        this.authService.setSecureCookies(
+          res,
+          tokens.accessToken,
+          tokens.refreshToken
+        );
+
         res.status(200).json({
           success: true,
-          data: userWithoutPassword, // TODO return user profile here
           message: 'User logged in successfully',
           csrfToken,
         });
@@ -128,74 +158,47 @@ export class AuthController {
   };
 
   // Refresh tokens
-  async refreshToken(req: Request, res: Response): Promise<void> {
+  refreshToken = async (req: Request, res: Response): Promise<void> => {
     try {
-      let refreshToken = req.cookies?.refreshToken;
+      let refreshToken = req.cookies['refreshToken'];
 
       if (!refreshToken) {
         res.status(401).json({ error: 'Refresh token required' });
         return;
       }
 
-      // Check if refresh token exists in Redis
-      const storedUserId =
-        await this.authService.getRefreshTokenUserId(refreshToken);
-      if (!storedUserId) {
+      const result = await this.authService.refreshTokens(refreshToken);
+
+      if (!result.success) {
         this.authService.clearAuthCookies(res);
-        res.status(403).json({ error: 'Invalid refresh token' });
+        res.status(403).json({
+          success: false,
+          error: result.error,
+        });
         return;
       }
-
-      // Verify refresh token
-      const decoded = this.authService.verifyRefreshToken(refreshToken);
-      if (!decoded || decoded['userId'] !== storedUserId) {
-        await this.authService.deleteRefreshToken(refreshToken);
-        this.authService.clearAuthCookies(res);
-        res.status(403).json({ error: 'Invalid or expired refresh token' });
-        return;
-      }
-
-      // Find user
-      const user = await userService.getUserById(decoded['userId']);
-      if (!user) {
-        await this.authService.deleteRefreshToken(refreshToken);
-        this.authService.clearAuthCookies(res);
-        res.status(403).json({ error: 'User not found' });
-        return;
-      }
-
-      // Generate new tokens
-      const newTokens = this.authService.generateTokens(user.id);
-
-      // Remove old refresh token and store new one
-      await this.authService.deleteRefreshToken(refreshToken);
-      await this.authService.storeRefreshToken(newTokens.refreshToken, user.id);
-
-      // Generate new CSRF token
-      const csrfToken = this.authService.generateCSRFToken();
-      await this.authService.storeCSRFToken(csrfToken, user.id);
 
       // Set new secure cookies
       this.authService.setSecureCookies(
         res,
-        newTokens.accessToken,
-        newTokens.refreshToken
+        result.tokens!.accessToken,
+        result.tokens!.refreshToken
       );
 
       res.status(200).json({
         success: true,
         message: 'Tokens refreshed successfully',
-        csrfToken,
+        csrfToken: result.csrfToken,
       });
     } catch (error) {
       handleDatabaseError(res, error, 'Failed to refresh tokens');
     }
-  }
+  };
 
   // Logout
   logout = async (req: Request, res: Response): Promise<void> => {
     try {
-      const refreshToken = req.cookies?.refreshToken;
+      const refreshToken = req.cookies['refreshToken'];
 
       if (refreshToken) {
         const storedUserId =
@@ -217,27 +220,32 @@ export class AuthController {
     }
   };
 
-  // TODO Implement this later
   // Logout from all devices
-  //   logoutAll = async (
-  //     req: Request,
-  //     res: Response
-  //   ): Promise<void> => {
-  //     try {
-  //       if (req.user) {
-  //         await this.authService.deleteAllUserRefreshTokens(req.user.id);
-  //         await this.authService.deleteCSRFToken(req.user.id);
-  //       }
+  logoutAll = async (
+    req: AuthenticatedRequest,
+    res: Response
+  ): Promise<void> => {
+    try {
+      if (req.user) {
+        await this.authService.deleteAllUserRefreshTokens(
+          req.user.id.toString()
+        );
+        await this.authService.deleteCSRFToken(req.user.id.toString());
+      }
 
-  //       this.authService.clearAuthCookies(res);
-  //       res.json({ message: 'Logged out from all devices successfully' });
-  //     } catch (error) {
-  //       console.error('Logout all error:', error);
-  //       res.status(500).json({ error: 'Internal server error' });
-  //     }
-  //   };
+      this.authService.clearAuthCookies(res);
+
+      res.status(200).json({
+        success: true,
+        message: 'Logged out from all devices successfully',
+      });
+    } catch (error) {
+      handleDatabaseError(res, error, 'Failed to log out from all devices');
+    }
+  };
 }
 
-export const authController = new AuthController(
-  new AuthService(getRedisClient())
-);
+const authService = new AuthService(getRedisClient());
+const authMiddleware = new AuthMiddleware(authService);
+export const authController = new AuthController(authService);
+export { authMiddleware };
