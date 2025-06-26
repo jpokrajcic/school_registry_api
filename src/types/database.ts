@@ -72,21 +72,23 @@ export interface RoleTable {
 
 export interface StudentTable {
   id: Generated<number>;
-  first_name: string;
-  middle_name: string;
-  last_name: string;
-  city: string;
-  post_code: string;
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  regionId: string;
+  postCode: string;
   address: string;
   phone: string | null;
   email: string | null;
   mobile: string | null;
   gender: Gender;
-  date_of_birth: Date | null;
-  student_number: string;
-  school_id: number | null;
-  enrollment_date: Date | null;
+  dateOfBirth: Date | null;
+  studentNumber: string;
+  schoolId: number | null;
+  enrollmentDate: Date | null;
   active: boolean;
+  createdAt: Generated<Date>;
+  updatedAt: Generated<Date>;
 }
 
 export interface Database {
