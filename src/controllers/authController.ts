@@ -1,7 +1,7 @@
 import { type AuthenticatedRequest } from './../types/general';
-import { handleValidationError } from '../middleware/errorHandler';
+import { handleValidationError } from '../errorHandler';
 import { type Request, type Response } from 'express';
-import { handleDatabaseError } from '../middleware/errorHandler';
+import { handleError } from '../errorHandler';
 import { userService } from '../services/userService';
 import { createUserSchema, type SafeUserOutput } from '../schemas/userSchema';
 import { loginSchema } from '../schemas/authSchema';
@@ -36,7 +36,7 @@ export class AuthController {
         csrfToken,
       });
     } catch (error) {
-      handleDatabaseError(res, error, 'Failed to generate CSRF token');
+      handleError('Failed to generate CSRF token', error, res);
     }
   };
 
@@ -96,7 +96,7 @@ export class AuthController {
           csrfToken,
         });
       } catch (error) {
-        handleDatabaseError(res, error, 'Failed to register user');
+        handleError('Failed to register user', error, res);
       }
     }
   };
@@ -152,7 +152,7 @@ export class AuthController {
           csrfToken,
         });
       } catch (error) {
-        handleDatabaseError(res, error, 'Failed to log in');
+        handleError('Failed to log in', error, res);
       }
     }
   };
@@ -191,7 +191,7 @@ export class AuthController {
         csrfToken: result.csrfToken,
       });
     } catch (error) {
-      handleDatabaseError(res, error, 'Failed to refresh tokens');
+      handleError('Failed to refresh tokens', error, res);
     }
   };
 
@@ -216,7 +216,7 @@ export class AuthController {
         message: 'User logged out successfully',
       });
     } catch (error) {
-      handleDatabaseError(res, error, 'Failed to log out');
+      handleError('Failed to log out', error, res);
     }
   };
 
@@ -240,7 +240,7 @@ export class AuthController {
         message: 'Logged out from all devices successfully',
       });
     } catch (error) {
-      handleDatabaseError(res, error, 'Failed to log out from all devices');
+      handleError('Failed to log out from all devices', error, res);
     }
   };
 }

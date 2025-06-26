@@ -1,33 +1,6 @@
 import { z } from 'zod';
-import { type Request, type Response, type NextFunction } from 'express';
-import logger from '../logger';
-
-export interface ApiError extends Error {
-  statusCode?: number;
-}
-
-export const errorHandler = (
-  err: ApiError,
-  _req: Request,
-  res: Response,
-  _next: NextFunction
-): void => {
-  const statusCode = err.statusCode || 500;
-  const message = err.message || 'Internal Server Error';
-
-  console.error(`Error ${statusCode}: ${message}`);
-  console.error(err.stack);
-
-  logger.error(`Error ${statusCode}: ${message}`, {
-    stack: err.stack,
-  });
-
-  res.status(statusCode).json({
-    success: false,
-    message,
-    ...(process.env['NODE_ENV'] === 'development' && { stack: err.stack }),
-  });
-};
+import { type Response } from 'express';
+import logger from './logger';
 
 export const handleValidationError = (
   action: string,
@@ -51,18 +24,20 @@ export const handleValidationError = (
   return false;
 };
 
-export const handleDatabaseError = (
-  res: Response,
-  error: unknown,
-  message: string
+export const handleError = (
+  message: string,
+  error?: unknown,
+  res?: Response
 ): void => {
-  logger.error(`Error 500: ${message}`);
+  logger.error(`Error 500: ${message} ${error ? error : ''}`);
   console.error(`${message}:`, error);
 
-  res.status(500).json({
-    success: false,
-    message,
-  });
+  if (res) {
+    res.status(500).json({
+      success: false,
+      message,
+    });
+  }
 };
 
 export const databaseErrorThrower = (

@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import { db } from '../config/database';
-import { databaseErrorThrower } from '../middleware/errorHandler';
+import { databaseErrorThrower } from '../errorHandler';
 import {
   SafeUserSchema,
   type CreateUserInput,

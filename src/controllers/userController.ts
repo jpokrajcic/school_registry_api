@@ -6,10 +6,7 @@ import {
   userUpdateSchema,
 } from '../schemas/userSchema';
 import { userService } from '../services/userService';
-import {
-  handleValidationError,
-  handleDatabaseError,
-} from '../middleware/errorHandler';
+import { handleValidationError, handleError } from '../errorHandler';
 
 export class UserController {
   async create(req: Request, res: Response): Promise<void> {
@@ -35,7 +32,7 @@ export class UserController {
           message: 'User created successfully',
         });
       } catch (error) {
-        handleDatabaseError(res, error, 'Failed to create user');
+        handleError('Failed to create user', error, res);
       }
     }
   }
@@ -73,7 +70,7 @@ export class UserController {
           },
         });
       } catch (error) {
-        handleDatabaseError(res, error, 'Failed to fetch users');
+        handleError('Failed to fetch users', error, res);
       }
     }
   }
@@ -100,7 +97,7 @@ export class UserController {
           data: user,
         });
       } catch (error) {
-        handleDatabaseError(res, error, 'Failed to fetch user');
+        handleError('Failed to fetch user', error, res);
       }
     }
   }
@@ -138,7 +135,7 @@ export class UserController {
           message: 'User updated successfully',
         });
       } catch (error) {
-        handleDatabaseError(res, error, 'Failed to update user');
+        handleError('Failed to update user', error, res);
       }
     }
   }
@@ -168,7 +165,7 @@ export class UserController {
           message: 'User deleted successfully',
         });
       } catch (error) {
-        handleDatabaseError(res, error, 'Failed to delete user');
+        handleError('Failed to delete user', error, res);
       }
     }
   }

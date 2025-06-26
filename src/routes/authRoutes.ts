@@ -9,7 +9,7 @@ const authLimiter = SecurityConfig.getAuthLimiter();
 // Public routes
 router.post('/register', authLimiter, authController.register);
 router.post('/login', authLimiter, authController.login);
-router.post('/refresh', authController.refreshToken);
+router.get('/refresh', authController.refreshToken);
 
 // Protected routes
 router.use(authMiddleware.authenticate); // Apply authentication to all routes below

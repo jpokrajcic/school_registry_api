@@ -6,10 +6,7 @@ import {
   schoolUpdateSchema,
 } from '../schemas/schoolSchema';
 import { schoolService } from '../services/schoolService';
-import {
-  handleValidationError,
-  handleDatabaseError,
-} from '../middleware/errorHandler';
+import { handleValidationError, handleError } from '../errorHandler';
 
 export class SchoolController {
   async create(req: Request, res: Response): Promise<void> {
@@ -35,7 +32,7 @@ export class SchoolController {
           message: 'School created successfully',
         });
       } catch (error) {
-        handleDatabaseError(res, error, 'Failed to create school');
+        handleError('Failed to create school', error, res);
       }
     }
   }
@@ -73,7 +70,7 @@ export class SchoolController {
           },
         });
       } catch (error) {
-        handleDatabaseError(res, error, 'Failed to fetch schools');
+        handleError('Failed to fetch schools', error, res);
       }
     }
   }
@@ -104,7 +101,7 @@ export class SchoolController {
           data: school,
         });
       } catch (error) {
-        handleDatabaseError(res, error, 'Failed to fetch school');
+        handleError('Failed to fetch school', error, res);
       }
     }
   }
@@ -144,7 +141,7 @@ export class SchoolController {
           message: 'School updated successfully',
         });
       } catch (error) {
-        handleDatabaseError(res, error, 'Failed to update school');
+        handleError('Failed to update school', error, res);
       }
     }
   }
@@ -176,7 +173,7 @@ export class SchoolController {
           message: 'School deleted successfully',
         });
       } catch (error) {
-        handleDatabaseError(res, error, 'Failed to delete school');
+        handleError('Failed to delete school', error, res);
       }
     }
   }

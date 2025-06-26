@@ -6,10 +6,7 @@ import {
   type UpdateRoleInput,
 } from '../schemas/roleSchema';
 import { roleService } from '../services/roleService';
-import {
-  handleValidationError,
-  handleDatabaseError,
-} from '../middleware/errorHandler';
+import { handleValidationError, handleError } from '../errorHandler';
 
 export class RoleController {
   async create(req: Request, res: Response): Promise<void> {
@@ -35,7 +32,7 @@ export class RoleController {
           message: 'Role created successfully',
         });
       } catch (error) {
-        handleDatabaseError(res, error, 'Failed to create role');
+        handleError('Failed to create role', error, res);
       }
     }
   }
@@ -73,7 +70,7 @@ export class RoleController {
           },
         });
       } catch (error) {
-        handleDatabaseError(res, error, 'Failed to fetch roles');
+        handleError('Failed to fetch roles', error, res);
       }
     }
   }
@@ -100,7 +97,7 @@ export class RoleController {
           data: role,
         });
       } catch (error) {
-        handleDatabaseError(res, error, 'Failed to fetch role');
+        handleError('Failed to fetch role', error, res);
       }
     }
   }
@@ -140,7 +137,7 @@ export class RoleController {
           message: 'Role updated successfully',
         });
       } catch (error) {
-        handleDatabaseError(res, error, 'Failed to update role');
+        handleError('Failed to update role', error, res);
       }
     }
   }
@@ -170,7 +167,7 @@ export class RoleController {
           message: 'Role deleted successfully',
         });
       } catch (error) {
-        handleDatabaseError(res, error, 'Failed to delete role');
+        handleError('Failed to delete role', error, res);
       }
     }
   }

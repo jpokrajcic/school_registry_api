@@ -1,5 +1,5 @@
 import { db } from '../config/database';
-import { databaseErrorThrower } from '../middleware/errorHandler';
+import { databaseErrorThrower } from '../errorHandler';
 import {
   type CreateSchoolInput,
   type SchoolParams,

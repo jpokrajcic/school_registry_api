@@ -6,10 +6,7 @@ import {
   updateRegionSchema,
 } from '../schemas/regionSchema';
 import { regionService } from '../services/regionService';
-import {
-  handleDatabaseError,
-  handleValidationError,
-} from '../middleware/errorHandler';
+import { handleError, handleValidationError } from '../errorHandler';
 
 export class RegionController {
   async create(req: Request, res: Response): Promise<void> {
@@ -35,7 +32,7 @@ export class RegionController {
           message: 'Region created successfully',
         });
       } catch (error) {
-        handleDatabaseError(res, error, 'Failed to create region');
+        handleError('Failed to create region', error, res);
       }
     }
   }
@@ -72,7 +69,7 @@ export class RegionController {
           },
         });
       } catch (error) {
-        handleDatabaseError(res, error, 'Failed to fetch regions');
+        handleError('Failed to fetch regions', error, res);
       }
     }
   }
@@ -101,7 +98,7 @@ export class RegionController {
           data: region,
         });
       } catch (error) {
-        handleDatabaseError(res, error, 'Failed to fetch region');
+        handleError('Failed to fetch region', error, res);
       }
     }
   }
@@ -139,7 +136,7 @@ export class RegionController {
           message: 'Region updated successfully',
         });
       } catch (error) {
-        handleDatabaseError(res, error, 'Failed to update region');
+        handleError('Failed to update region', error, res);
       }
     }
   }
@@ -169,7 +166,7 @@ export class RegionController {
           message: 'Region deleted successfully',
         });
       } catch (error) {
-        handleDatabaseError(res, error, 'Failed to delete region');
+        handleError('Failed to delete region', error, res);
       }
     }
   }
