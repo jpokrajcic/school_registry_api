@@ -12,15 +12,24 @@ import path from 'path';
 // The `Kysely` instance is configured with a PostgreSQL dialect using a connection pool (uses the "pg" driver library under the hood)
 // This allows for efficient database operations and connection management.
 
-const envPath =
-  process.env['NODE_ENV'] === 'production'
-    ? '.env.production'
-    : process.env['NODE_ENV'] === 'development'
-      ? '.env.development'
-      : '.env.test';
+let envPath: string;
+switch (process.env['NODE_ENV']) {
+  case 'production':
+    envPath = '.env.production';
+    break;
+  case 'development':
+    console.log('📦 DEVELOPMENT LOADED');
+    envPath = '.env.development';
+    break;
+  case 'test':
+    envPath = '.env.test';
+    break;
+  default:
+    envPath = '.env';
+}
 
 dotenv.config({ path: path.resolve(process.cwd(), envPath) });
-console.log('📦 Loaded environment variables HOST:', process.env['DB_NAME']);
+
 const dialect = new PostgresDialect({
   pool: new Pool({
     host: process.env['DB_HOST'],

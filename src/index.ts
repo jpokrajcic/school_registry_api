@@ -13,14 +13,25 @@ import { LoggingConfig } from './config/loggingConfig';
 import { ParsingConfig } from './config/parsingConfig';
 import { getRedisClient } from './redis/redisClient';
 import { authRoutes } from './routes/authRoutes';
+import { studentRoutes } from './routes/studentRoutes';
 
 let server: Server;
 
 // Load correct environment variables based on NODE_ENV
-const envPath =
-  process.env['NODE_ENV'] === 'production'
-    ? '.env.production'
-    : '.env.development';
+let envPath: string;
+switch (process.env['NODE_ENV']) {
+  case 'production':
+    envPath = '.env.production';
+    break;
+  case 'development':
+    envPath = '.env.development';
+    break;
+  case 'test':
+    envPath = '.env.test';
+    break;
+  default:
+    envPath = '.env';
+}
 
 dotenv.config({ path: path.resolve(process.cwd(), envPath) });
 
@@ -50,6 +61,7 @@ app.use('/api/roles', roleRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/regions', regionRoutes);
 app.use('/api/schools', schoolRoutes);
+app.use('/api/students', studentRoutes);
 
 // Health check
 app.get('/health', (_req: Request, res: Response) => {

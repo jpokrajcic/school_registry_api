@@ -6,10 +6,20 @@ let redisClient: Redis | null = null;
 
 export function getRedisClient(): Redis {
   if (!redisClient) {
-    const envPath =
-      process.env['NODE_ENV'] === 'production'
-        ? '.env.production'
-        : '.env.development';
+    let envPath: string;
+    switch (process.env['NODE_ENV']) {
+      case 'production':
+        envPath = '.env.production';
+        break;
+      case 'development':
+        envPath = '.env.development';
+        break;
+      case 'test':
+        envPath = '.env.test';
+        break;
+      default:
+        envPath = '.env';
+    }
 
     dotenv.config({ path: path.resolve(process.cwd(), envPath) });
 

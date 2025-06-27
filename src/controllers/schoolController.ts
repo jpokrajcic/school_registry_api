@@ -21,7 +21,7 @@ export class SchoolController {
         if (!school) {
           res.status(404).json({
             success: false,
-            message: 'Schoold could not be created',
+            error: 'Failed to create school',
           });
           return;
         }

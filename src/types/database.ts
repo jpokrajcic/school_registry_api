@@ -75,7 +75,7 @@ export interface StudentTable {
   firstName: string;
   middleName: string;
   lastName: string;
-  regionId: string;
+  regionId: number | null;
   postCode: string;
   address: string;
   phone: string | null;
