@@ -1,13 +1,22 @@
 import express from 'express';
 import { roleController } from '../controllers/roleController';
+import { SecurityConfig } from '../config/securityConfig';
+import { authMiddleware } from '../controllers/authController';
 
 export const router = express.Router();
 
-// CRUD routes
-router.post('/', roleController.create);
-router.get('/', roleController.getAll);
-router.get('/:id', roleController.getById);
-router.put('/:id', roleController.update);
-router.delete('/:id', roleController.delete);
+const generalLimiter = SecurityConfig.getGeneralLimiter();
+
+// Protected routes
+router.use(authMiddleware.authenticate);
+
+router.get('/', generalLimiter, roleController.getAll);
+router.get('/:id', generalLimiter, roleController.getById);
+
+router.use(authMiddleware.csrfProtection);
+
+router.post('/', generalLimiter, roleController.create);
+router.put('/:id', generalLimiter, roleController.update);
+router.delete('/:id', generalLimiter, roleController.delete);
 
 export { router as roleRoutes };

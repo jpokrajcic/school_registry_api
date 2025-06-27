@@ -10,7 +10,6 @@ const generalLimiter = SecurityConfig.getGeneralLimiter();
 // Protected routes
 router.use(authMiddleware.authenticate);
 
-// Read-only routes
 router.get(
   '/statistics',
   generalLimiter,
@@ -19,10 +18,8 @@ router.get(
 router.get('/', generalLimiter, studentController.getStudents);
 router.get('/:id', generalLimiter, studentController.getStudentById);
 
-// CSRF protection for write operations
 router.use(authMiddleware.csrfProtection);
 
-// Regular operations
 router.post('/', generalLimiter, studentController.createStudent);
 router.put('/:id', generalLimiter, studentController.updateStudent);
 router.patch(
