@@ -14,6 +14,7 @@ import { ParsingConfig } from './config/parsingConfig';
 import { getRedisClient } from './redis/redisClient';
 import { authRoutes } from './routes/authRoutes';
 import { studentRoutes } from './routes/studentRoutes';
+import { teacherRoutes } from './routes/teacherRoutes';
 
 let server: Server;
 
@@ -62,6 +63,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/regions', regionRoutes);
 app.use('/api/schools', schoolRoutes);
 app.use('/api/students', studentRoutes);
+app.use('/api/teachers', teacherRoutes);
 
 // Health check
 app.get('/health', (_req: Request, res: Response) => {

@@ -11,13 +11,13 @@ const generalLimiter = SecurityConfig.getGeneralLimiter();
 // Protected routes
 router.use(authMiddleware.authenticate);
 
-router.get('/', schoolController.getAll);
-router.get('/:id', schoolController.getById);
+router.get('/', generalLimiter, schoolController.getAll);
+router.get('/:id', generalLimiter, schoolController.getById);
 
 router.use(authMiddleware.csrfProtection);
 
-router.post('/', schoolController.create);
-router.put('/:id', schoolController.update);
-router.delete('/:id', schoolController.delete);
+router.post('/', generalLimiter, schoolController.create);
+router.put('/:id', generalLimiter, schoolController.update);
+router.delete('/:id', generalLimiter, schoolController.delete);
 
 export { router as schoolRoutes };

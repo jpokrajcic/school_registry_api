@@ -50,7 +50,7 @@ export class StudentController {
 
     if (validationResult.success) {
       try {
-        const students = await studentService.createStudentsAtomic(
+        const students = await studentService.createStudents(
           validationResult.data
         );
 

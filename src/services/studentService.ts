@@ -47,7 +47,7 @@ export class StudentService {
     return;
   }
 
-  async createStudentsAtomic(
+  async createStudents(
     input: BulkCreateStudentsInput
   ): Promise<Student[] | undefined> {
     try {

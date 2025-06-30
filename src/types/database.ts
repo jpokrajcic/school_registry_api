@@ -91,6 +91,22 @@ export interface StudentTable {
   updatedAt: Generated<Date>;
 }
 
+export interface TeacherTable {
+  id: Generated<number>;
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  postCode: string;
+  address: string;
+  email: string;
+  phone: string | null;
+  mobile: string | null;
+  gender: Gender;
+  dateOfBirth: Date | null;
+  createdAt: Generated<Date>;
+  updatedAt: Generated<Date>;
+}
+
 export interface Database {
   regions: RegionTable;
   schools: SchoolTable;
@@ -98,6 +114,7 @@ export interface Database {
   users: UserTable;
   roles: RoleTable;
   students: StudentTable;
+  teachers: TeacherTable;
 }
 
 export type Region = Selectable<RegionTable>;
@@ -123,3 +140,7 @@ export type RoleUpdate = Updateable<RoleTable>;
 export type Student = Selectable<StudentTable>;
 export type NewStudent = Insertable<StudentTable>;
 export type StudentUpdate = Updateable<StudentTable>;
+
+export type Teacher = Selectable<TeacherTable>;
+export type NewTeacher = Insertable<TeacherTable>;
+export type TeacherUpdate = Updateable<TeacherTable>;
