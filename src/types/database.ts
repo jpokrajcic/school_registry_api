@@ -16,6 +16,12 @@ export enum Gender {
   Female = 'female',
 }
 
+export enum EmploymentType {
+  FullTime = 'full-time',
+  PartTime = 'part-time',
+  Contract = 'contract',
+}
+
 // Interfaces
 export interface RegionTable {
   id: Generated<number>;
@@ -107,6 +113,18 @@ export interface TeacherTable {
   updatedAt: Generated<Date>;
 }
 
+export interface TeacherSchoolTable {
+  id: Generated<number>;
+  teacherId: number;
+  schoolId: number;
+  employmentType: EmploymentType;
+  startDate: Date;
+  endDate: Date | null;
+  isActive: Generated<boolean>;
+  createdAt: Generated<Date>;
+  updatedAt: Generated<Date>;
+}
+
 export interface Database {
   regions: RegionTable;
   schools: SchoolTable;
@@ -115,6 +133,7 @@ export interface Database {
   roles: RoleTable;
   students: StudentTable;
   teachers: TeacherTable;
+  teacherSchools: TeacherSchoolTable;
 }
 
 export type Region = Selectable<RegionTable>;
@@ -144,3 +163,7 @@ export type StudentUpdate = Updateable<StudentTable>;
 export type Teacher = Selectable<TeacherTable>;
 export type NewTeacher = Insertable<TeacherTable>;
 export type TeacherUpdate = Updateable<TeacherTable>;
+
+export type TeacherSchool = Selectable<TeacherSchoolTable>;
+export type NewTeacherSchool = Insertable<TeacherSchoolTable>;
+export type TeacherSchoolUpdate = Updateable<TeacherSchoolTable>;

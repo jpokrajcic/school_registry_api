@@ -60,20 +60,6 @@ export async function down(db: Kysely<any>): Promise<void> {
   console.log('Dropping users table...');
 
   try {
-    // Drop indexes first (they will be dropped automatically with the table, but being explicit)
-    const indexes = ['users_role_id_idx', 'users_school_id_idx'];
-
-    for (const indexName of indexes) {
-      try {
-        await db.schema.dropIndex(indexName).ifExists().execute();
-      } catch (error) {
-        console.warn(
-          `⚠️  Could not drop index ${indexName}:`,
-          error instanceof Error ? error.message : String(error)
-        );
-      }
-    }
-
     // Drop the table
     await db.schema.dropTable('users').execute();
 

@@ -102,27 +102,6 @@ export async function down(db: Kysely<any>): Promise<void> {
   console.log('Dropping students table...');
 
   try {
-    // Drop indexes first (they will be dropped automatically with the table, but being explicit)
-    const indexes = [
-      'students_student_number_idx',
-      'students_school_id_idx',
-      'students_active_idx',
-      'students_name_idx',
-      'students_enrollment_date_idx',
-      'students_gender_idx',
-    ];
-
-    for (const indexName of indexes) {
-      try {
-        await db.schema.dropIndex(indexName).ifExists().execute();
-      } catch (error) {
-        console.warn(
-          `⚠️  Could not drop index ${indexName}:`,
-          error instanceof Error ? error.message : String(error)
-        );
-      }
-    }
-
     // Drop the table
     await db.schema.dropTable('students').execute();
 

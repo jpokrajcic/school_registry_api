@@ -41,20 +41,6 @@ export async function down(db: Kysely<any>): Promise<void> {
   console.log('Dropping regions table...');
 
   try {
-    // Drop indexes first (they will be dropped automatically with the table, but being explicit)
-    const indexes = ['regions_is_city_idx', 'regions_created_at_idx'];
-
-    for (const indexName of indexes) {
-      try {
-        await db.schema.dropIndex(indexName).ifExists().execute();
-      } catch (error) {
-        console.warn(
-          `⚠️  Could not drop index ${indexName}:`,
-          error instanceof Error ? error.message : String(error)
-        );
-      }
-    }
-
     // Drop the table
     await db.schema.dropTable('regions').execute();
 
