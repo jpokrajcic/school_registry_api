@@ -74,7 +74,10 @@ async function runNewMigrations(): Promise<void> {
   }
 }
 
-async function _revertLastMigration(): Promise<void> {
+// For future manual rollback use – not currently invoked
+// Exported to avoid eslint error for unused function
+// This function reverts the last executed migration
+export async function revertLastMigration(): Promise<void> {
   try {
     const executedMigrations = await getExecutedMigrations();
     if (executedMigrations.length === 0) {
