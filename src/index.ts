@@ -19,6 +19,8 @@ import { authRoutes } from './routes/authRoutes';
 import { studentRoutes } from './routes/studentRoutes';
 import { teacherRoutes } from './routes/teacherRoutes';
 import type { AppConfig, HealthResponse } from './types/general';
+import { getEnvironmentPath } from './utils/pathUtils';
+import { testDatabaseConnection } from './utils/databaseUtils';
 
 let server: Server;
 let redisClient: ReturnType<typeof getRedisClient>;
@@ -34,17 +36,6 @@ const loadEnvironmentConfig = (): void => {
       result.error.message
     );
   }
-};
-
-const getEnvironmentPath = (): string => {
-  const nodeEnv = process.env['NODE_ENV']?.toLowerCase();
-  const envMap: Record<string, string> = {
-    production: '.env.production',
-    development: '.env.development',
-    test: '.env.test',
-  };
-
-  return envMap[nodeEnv || ''] || '.env';
 };
 
 // Application configuration
@@ -197,7 +188,7 @@ const initializeServices = async (): Promise<void> => {
     redisClient = getRedisClient();
 
     // Test database connection
-    await db.selectFrom('regions').select('id').limit(1).execute();
+    testDatabaseConnection();
     console.log('Database connection established');
 
     console.log('All services initialized successfully');

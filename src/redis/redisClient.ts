@@ -1,25 +1,13 @@
 import Redis from 'ioredis';
 import dotenv from 'dotenv';
 import path from 'path';
+import { getEnvironmentPath } from '../utils/pathUtils';
 
 let redisClient: Redis | null = null;
 
 export function getRedisClient(): Redis {
   if (!redisClient) {
-    let envPath: string;
-    switch (process.env['NODE_ENV']) {
-      case 'production':
-        envPath = '.env.production';
-        break;
-      case 'development':
-        envPath = '.env.development';
-        break;
-      case 'test':
-        envPath = '.env.test';
-        break;
-      default:
-        envPath = '.env';
-    }
+    const envPath: string = getEnvironmentPath();
 
     dotenv.config({ path: path.resolve(process.cwd(), envPath) });
 
