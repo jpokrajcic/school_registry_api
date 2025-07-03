@@ -169,12 +169,17 @@ const configureErrorHandling = (app: Express): void => {
 };
 
 // Server creation
+// NOTE: since app is deployed using Railway, we don't need to handle HTTPS certificates manually in production environment because Railway provides several built-in options for HTTPS.
 const createServer = (app: Express, config: AppConfig): Server => {
-  const credentials = getSSLCredentials(config);
-
-  if (credentials) {
-    console.log('Creating HTTPS server...');
-    return https.createServer(credentials, app);
+  if (process.env['NODE_ENV'] !== 'production') {
+    const credentials = getSSLCredentials(config);
+    if (credentials) {
+      console.log('Creating HTTPS server...');
+      return https.createServer(credentials, app);
+    } else {
+      console.log('Creating HTTP server...');
+      return http.createServer(app);
+    }
   } else {
     console.log('Creating HTTP server...');
     return http.createServer(app);
