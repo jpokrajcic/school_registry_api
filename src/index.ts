@@ -1,12 +1,15 @@
 import express, { type Request, type Response, type Express } from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
+import https from 'https';
+import fs from 'fs';
 import cookieParser from 'cookie-parser';
 import { roleRoutes } from './routes/roleRoutes';
 import { userRoutes } from './routes/userRoutes';
 import { regionRoutes } from './routes/regionRoutes';
 import { schoolRoutes } from './routes/schoolRoutes';
 import { Server } from 'http';
+import http from 'http';
 import { db } from './config/database';
 import { SecurityConfig } from './config/securityConfig';
 import { LoggingConfig } from './config/loggingConfig';
@@ -15,123 +18,304 @@ import { getRedisClient } from './redis/redisClient';
 import { authRoutes } from './routes/authRoutes';
 import { studentRoutes } from './routes/studentRoutes';
 import { teacherRoutes } from './routes/teacherRoutes';
+import type { AppConfig, HealthResponse } from './types/general';
 
 let server: Server;
+let redisClient: ReturnType<typeof getRedisClient>;
 
-// Load correct environment variables based on NODE_ENV
-let envPath: string;
-switch (process.env['NODE_ENV']) {
-  case 'production':
-    envPath = '.env.production';
-    break;
-  case 'development':
-    envPath = '.env.development';
-    break;
-  case 'test':
-    envPath = '.env.test';
-    break;
-  default:
-    envPath = '.env';
-}
+// Environment configuration
+const loadEnvironmentConfig = (): void => {
+  const envPath = getEnvironmentPath();
+  const result = dotenv.config({ path: path.resolve(process.cwd(), envPath) });
 
-dotenv.config({ path: path.resolve(process.cwd(), envPath) });
+  if (result.error) {
+    console.warn(
+      `Warning: Could not load environment file ${envPath}:`,
+      result.error.message
+    );
+  }
+};
 
-// Create Express app
-const app: Express = express();
-const PORT = process.env['PORT'] || 3000;
-const redis = getRedisClient();
+const getEnvironmentPath = (): string => {
+  const nodeEnv = process.env['NODE_ENV']?.toLowerCase();
+  const envMap: Record<string, string> = {
+    production: '.env.production',
+    development: '.env.development',
+    test: '.env.test',
+  };
 
-/******************************/
-//  MIDDLEWARE CONFIGURATION  //
-/*****************************/
+  return envMap[nodeEnv || ''] || '.env';
+};
 
-// Configure security middleware (helmet, CORS, limiters)
-SecurityConfig.configureSecurityMiddleware(app);
+// Application configuration
+const getAppConfig = (): AppConfig => {
+  const port = parseInt(process.env['PORT'] || '3000', 10);
+  const environment = process.env['NODE_ENV'] || 'development';
+  const sslKeyPath = process.env['SSL_KEY_PATH'] || '';
+  const sslCertPath = process.env['SSL_CERT_PATH'] || '';
+  const sslEnabled = !!(sslKeyPath && sslCertPath);
 
-// Configure body parsers
-ParsingConfig.configureParsingMiddleware(app);
+  if (isNaN(port) || port <= 0 || port > 65535) {
+    throw new Error(`Invalid port number: ${process.env['PORT']}`);
+  }
 
-// Logging middleware (Morgan and Winston)
-LoggingConfig.configureLoggingMiddleware(app);
+  return {
+    port,
+    environment,
+    sslEnabled,
+    sslKeyPath,
+    sslCertPath,
+    appVersion: process.env['APP_VERSION'] || '',
+  };
+};
 
-app.use(cookieParser());
+// SSL configuration
+const getSSLCredentials = (
+  config: AppConfig
+): { key: string; cert: string } | null => {
+  if (!config.sslEnabled || !config.sslKeyPath || !config.sslCertPath) {
+    return null;
+  }
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/roles', roleRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/regions', regionRoutes);
-app.use('/api/schools', schoolRoutes);
-app.use('/api/students', studentRoutes);
-app.use('/api/teachers', teacherRoutes);
+  try {
+    return {
+      key: fs.readFileSync(path.resolve(config.sslKeyPath), 'utf8'),
+      cert: fs.readFileSync(path.resolve(config.sslCertPath), 'utf8'),
+    };
+  } catch (error) {
+    throw new Error(
+      `Failed to load SSL certificates: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
+};
 
-// Health check
-app.get('/health', (_req: Request, res: Response) => {
-  res.json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env['NODE_ENV'],
-    version: process.env['APP_VERSION'],
+// Application setup
+const createApp = (): Express => {
+  const app: Express = express();
+
+  // Configure security middleware (helmet, CORS, limiters)
+  SecurityConfig.configureSecurityMiddleware(app);
+
+  // Configure body parsers
+  ParsingConfig.configureParsingMiddleware(app);
+
+  // Logging middleware (Morgan and Winston)
+  LoggingConfig.configureLoggingMiddleware(app);
+
+  // Cookie parser
+  app.use(cookieParser());
+
+  return app;
+};
+
+// Route configuration
+const configureRoutes = (app: Express): void => {
+  // API routes
+  app.use('/api/auth', authRoutes);
+  app.use('/api/roles', roleRoutes);
+  app.use('/api/users', userRoutes);
+  app.use('/api/regions', regionRoutes);
+  app.use('/api/schools', schoolRoutes);
+  app.use('/api/students', studentRoutes);
+  app.use('/api/teachers', teacherRoutes);
+
+  // Health check endpoint
+  app.get('/health', async (_req: Request, res: Response) => {
+    try {
+      const healthResponse: HealthResponse = {
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env['NODE_ENV'] || 'development',
+        version: process.env['APP_VERSION'] || '',
+        services: {
+          database: 'connected', // You might want to add actual health checks
+          redis: 'connected',
+        },
+      };
+
+      res.json(healthResponse);
+    } catch (error) {
+      const errorResponse: HealthResponse = {
+        status: 'ERROR',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env['NODE_ENV'] || 'development',
+      };
+
+      res.status(503).json(errorResponse);
+    }
   });
-});
 
-// 404 handler
-app.use('*', (_req: Request, res: Response) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found',
+  // 404 handler - should be last
+  app.use('*', (_req: Request, res: Response) => {
+    res.status(404).json({
+      success: false,
+      message: 'Route not found',
+      timestamp: new Date().toISOString(),
+    });
   });
-});
+};
 
-// Start server
+// TODO Review this part
+// Error handling middleware
+const configureErrorHandling = (app: Express): void => {
+  // Global error handler
+  app.use((err: Error, _req: Request, res: Response, _next: any) => {
+    console.error('Unhandled error:', err);
+
+    // Don't leak error details in production
+    // TODO consider adding to log file in production
+    const isDevelopment = process.env['NODE_ENV'] === 'development';
+
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      ...(isDevelopment && { error: err.message, stack: err.stack }),
+      timestamp: new Date().toISOString(),
+    });
+  });
+};
+
+// Server creation
+const createServer = (app: Express, config: AppConfig): Server => {
+  const credentials = getSSLCredentials(config);
+
+  if (credentials) {
+    console.log('Creating HTTPS server...');
+    return https.createServer(credentials, app);
+  } else {
+    console.log('Creating HTTP server...');
+    return http.createServer(app);
+  }
+};
+
+// Database and Redis initialization
+const initializeServices = async (): Promise<void> => {
+  try {
+    // Initialize Redis client
+    redisClient = getRedisClient();
+
+    // Test database connection
+    await db.selectFrom('regions').select('id').limit(1).execute();
+    console.log('Database connection established');
+
+    console.log('All services initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize services:', error);
+    throw error;
+  }
+};
+
+// Server startup
 const startServer = async (): Promise<void> => {
   try {
-    // Connect to database
-    console.log('Connected to database');
+    const config = getAppConfig();
 
-    server = app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-      console.log(`Environment: ${process.env['NODE_ENV'] || 'development'}`);
+    // Initialize services first
+    await initializeServices();
+
+    // Create and configure app
+    const app = createApp();
+    configureRoutes(app);
+    configureErrorHandling(app);
+
+    // Create server
+    server = createServer(app, config);
+
+    // Start listening
+    server.listen(config.port, () => {
+      const protocol = config.sslEnabled ? 'HTTPS' : 'HTTP';
+      console.log(`${protocol} server is running on port ${config.port}`);
+      console.log(`Environment: ${config.environment}`);
+      console.log(`Version: ${config.appVersion || 'unknown'}`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
+    await cleanup();
     process.exit(1);
   }
 };
 
-// Graceful shutdown
-const gracefulShutdown = async (): Promise<void> => {
-  console.log('Shutting down gracefully...');
+// Cleanup function
+const cleanup = async (): Promise<void> => {
+  const cleanupPromises: Promise<void>[] = [];
 
-  // Stop accepting new HTTP requests
-  server.close(async (err?: Error) => {
-    if (err) {
-      console.error('Error closing HTTP server:', err);
-      process.exit(1);
-    }
+  // Close Redis connection
+  if (redisClient) {
+    cleanupPromises.push(
+      redisClient
+        .quit()
+        .then(() => {})
+        .catch(err => {
+          console.error('Error closing Redis:', err);
+        })
+    );
+  }
 
-    try {
-      console.log('Closing Redis connection...');
-      await redis.quit();
-      console.log('Redis closed.');
-    } catch (redisErr) {
-      console.error('Error closing Redis:', redisErr);
-    }
+  // Close database connection
+  cleanupPromises.push(
+    db.destroy().catch(err => {
+      console.error('Error closing database:', err);
+    })
+  );
 
-    try {
-      console.log('Closing PostgreSQL connection...');
-      await db.destroy(); // ✅ Kysely .destroy() calls pool.end()
-      console.log('PostgreSQL connection closed.');
-    } catch (dbErr) {
-      console.error('Error closing database:', dbErr);
-    }
-
-    process.exit(0);
-  });
+  // Wait for all cleanup operations with timeout
+  try {
+    await Promise.race([
+      Promise.all(cleanupPromises),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Cleanup timeout')), 5000)
+      ),
+    ]);
+    console.log('All connections closed successfully');
+  } catch (error) {
+    console.error('Cleanup error:', error);
+  }
 };
 
-process.on('SIGTERM', gracefulShutdown);
-process.on('SIGINT', gracefulShutdown);
+// Graceful shutdown
+const gracefulShutdown = async (signal: string): Promise<void> => {
+  console.log(`Received ${signal}. Shutting down gracefully...`);
 
+  // Stop accepting new connections
+  if (server) {
+    server.close(async (err?: Error) => {
+      if (err) {
+        console.error('Error closing server:', err);
+      }
+
+      await cleanup();
+      process.exit(err ? 1 : 0);
+    });
+
+    // Force close after timeout
+    setTimeout(() => {
+      console.error('Forced shutdown due to timeout');
+      process.exit(1);
+    }, 10000);
+  } else {
+    await cleanup();
+    process.exit(0);
+  }
+};
+
+// Signal handlers
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Unhandled promise rejection handler
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
+// Uncaught exception handler
+process.on('uncaughtException', error => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+// Load environment and start server
+loadEnvironmentConfig();
 startServer();
