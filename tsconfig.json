@@ -38,5 +38,9 @@
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"], // Exclude these folders and test files from compilation
   "ts-node": {
     "esm": true // Enable ESM support for ts-node
+  },
+  "tsc-alias": {
+    "resolveFullPaths": true,
+    "verbose": false
   }
 }
