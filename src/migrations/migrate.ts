@@ -74,7 +74,7 @@ async function runNewMigrations(): Promise<void> {
   }
 }
 
-async function revertLastMigration(): Promise<void> {
+async function _revertLastMigration(): Promise<void> {
   try {
     const executedMigrations = await getExecutedMigrations();
     if (executedMigrations.length === 0) {
