@@ -4,7 +4,7 @@ import path from 'path';
 import https from 'https';
 import fs from 'fs';
 import cookieParser from 'cookie-parser';
-import { roleRoutes } from './routes/roleRoutes';
+import { roleRoutes } from './routes/roleRoutes.js';
 import { userRoutes } from './routes/userRoutes';
 import { regionRoutes } from './routes/regionRoutes';
 import { schoolRoutes } from './routes/schoolRoutes';
