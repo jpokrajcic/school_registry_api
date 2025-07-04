@@ -19,7 +19,7 @@ export function getRedisClient(): Redis {
     //   maxRetriesPerRequest: 3,
     // });
 
-    const redisClient = new Redis(process.env['REDIS_URL'] + '?family=0');
+    redisClient = new Redis(process.env['REDIS_URL'] + '?family=0');
 
     // Handle Redis connection events
     redisClient.on('connect', () => {
