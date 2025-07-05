@@ -29,13 +29,6 @@ const createDatabaseDialect = (): PostgresDialect => {
     }
 
     return new PostgresDialect({
-      // pool: new Pool({
-      //   connectionString: process.env['DATABASE_URL'],
-      //   // Optional: Add production-specific pool settings
-      //   max: 20, // Maximum number of connections in pool
-      //   idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
-      //   connectionTimeoutMillis: 2000, // Return error after 2 seconds if connection could not be established
-      // }),
       pool: new Pool({
         connectionString: process.env['DATABASE_URL'],
         ssl: {

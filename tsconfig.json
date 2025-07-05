@@ -40,7 +40,8 @@
     "esm": true // Enable ESM support for ts-node
   },
   "tsc-alias": {
-    "resolveFullPaths": true,
-    "verbose": false
+    // Configuration for tsc-alias to handle path aliases, adds .js extension to imported modules during ts compilation
+    "resolveFullPaths": true, // Resolve full paths for aliased imports
+    "verbose": false // Disable verbose output for tsc-alias
   }
 }

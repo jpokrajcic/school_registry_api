@@ -312,6 +312,35 @@ The application supports multiple environments:
 
 Environment is determined by `NODE_ENV` variable.
 
+## 🚝 Railway Deployment
+
+Deployment requirements:
+
+1. Create project on Railway
+2. In created project there should be three services: API service, PostgreSQL service and Redis service
+3. Configure environment variables
+
+Connecting to deployed API service on Railway:
+
+1. Install Railway CLI with 'npm install -g @railway/cli'
+2. Log in to Railway through CLI with 'railway login' (this will temporarily open browser for Railway login)
+3. Select workspace, project, environment and API service with 'railway link'
+
+Running migration scripts:
+
+1. In terminal position to local project folder containing package.json (make sure Railway CLI is installed)
+2. Select Postgres service in Railway project containing API service, Postgres service and Redis service
+3. From Variables get DATABASE_PUBLIC_URL value
+4. Run DATABASE_URL="DATABASE_PUBLIC_URL" npm run db:migrate
+5. This approach enables running migrations remotely without need to redeploy (except in case we want to remove last migration instead of running new migrations)
+
+Important general details:
+
+1. Railway handles secure HTTPS connection on its own, we don't need to manualy create certificates
+2. 'tsc-alias' package is important for adding .js extension to imported modules throughout the code after TS compilation is over
+3. In general Railway will not consume .env files, we should add all important environment variables to API service in our Railway project
+4. When using ioredis package for Redis use Railway Redis service REDIS_URL environment variable with additional config argument for creating Redis instance in our code (read this: https://docs.railway.com/reference/errors/enotfound-redis-railway-internal)
+
 ## 🐳 Docker Support
 
 ```dockerfile

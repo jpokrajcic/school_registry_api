@@ -11,15 +11,19 @@ export function getRedisClient(): Redis {
 
     dotenv.config({ path: path.resolve(process.cwd(), envPath) });
 
-    // Redis client setup
-    // redisClient = new Redis({
-    //   host: process.env['REDIS_HOST'] || 'localhost',
-    //   port: parseInt(process.env['REDIS_PORT'] || '6379'),
-    //   password: process.env['REDIS_PASSWORD'] || '',
-    //   maxRetriesPerRequest: 3,
-    // });
+    const isProduction = process.env['NODE_ENV'] === 'production';
 
-    redisClient = new Redis(process.env['REDIS_URL'] + '?family=0');
+    // When using Railway for deployment Redis client setup differs based on environment
+    if (isProduction) {
+      redisClient = new Redis(process.env['REDIS_URL'] + '?family=0');
+    } else {
+      redisClient = new Redis({
+        host: process.env['REDIS_HOST'] || 'localhost',
+        port: parseInt(process.env['REDIS_PORT'] || '6379'),
+        password: process.env['REDIS_PASSWORD'] || '',
+        maxRetriesPerRequest: 3,
+      });
+    }
 
     // Handle Redis connection events
     redisClient.on('connect', () => {

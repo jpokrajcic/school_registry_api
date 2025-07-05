@@ -21,6 +21,7 @@ import { teacherRoutes } from './routes/teacherRoutes';
 import type { AppConfig, HealthResponse } from './types/general';
 import { getEnvironmentPath } from './utils/pathUtils';
 import { testDatabaseConnection } from './utils/databaseUtils';
+import { RailwayConfig } from './config/railwayConfig.js';
 
 let server: Server;
 let redisClient: ReturnType<typeof getRedisClient>;
@@ -81,8 +82,11 @@ const getSSLCredentials = (
 };
 
 // Application setup
-const createApp = (): Express => {
+const createApp = (config: AppConfig): Express => {
   const app: Express = express();
+
+  // Railway middleware for HTTPS redirection
+  RailwayConfig.configureRailwayMiddleware(app, config);
 
   // Configure security middleware (helmet, CORS, limiters)
   SecurityConfig.configureSecurityMiddleware(app);
@@ -148,26 +152,6 @@ const configureRoutes = (app: Express): void => {
   });
 };
 
-// TODO Review this part
-// Error handling middleware
-const configureErrorHandling = (app: Express): void => {
-  // Global error handler
-  app.use((err: Error, _req: Request, res: Response, _next: any) => {
-    console.error('Unhandled error:', err);
-
-    // Don't leak error details in production
-    // TODO consider adding to log file in production
-    const isDevelopment = process.env['NODE_ENV'] === 'development';
-
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-      ...(isDevelopment && { error: err.message, stack: err.stack }),
-      timestamp: new Date().toISOString(),
-    });
-  });
-};
-
 // Server creation
 // NOTE: since app is deployed using Railway, we don't need to handle HTTPS certificates manually in production environment because Railway provides several built-in options for HTTPS.
 const createServer = (app: Express, config: AppConfig): Server => {
@@ -212,9 +196,8 @@ const startServer = async (): Promise<void> => {
     await initializeServices();
 
     // Create and configure app
-    const app = createApp();
+    const app = createApp(config);
     configureRoutes(app);
-    configureErrorHandling(app);
 
     // Create server
     server = createServer(app, config);
