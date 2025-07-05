@@ -2,7 +2,6 @@ import { db } from '../config/database';
 import { databaseErrorThrower } from '../errorHandler';
 import {
   type CreateSchoolInput,
-  type SchoolParams,
   type SchoolQuery,
   // type SchoolQuery,
   type UpdateSchoolInput,
@@ -84,7 +83,7 @@ export class SchoolService {
     return;
   }
 
-  async getSchoolById(id: number): Promise<SchoolParams | undefined> {
+  async getSchoolById(id: number): Promise<School | undefined> {
     try {
       return await db
         .selectFrom('schools')

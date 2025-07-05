@@ -21,4 +21,20 @@ router.post('/bulk', generalLimiter, teacherController.createTeachers);
 router.put('/:id', generalLimiter, teacherController.updateTeacher);
 router.delete('/:id', generalLimiter, teacherController.deleteTeacher);
 
+router.get(
+  '/:id/employment-history',
+  generalLimiter,
+  teacherController.getTeacherEmploymentHistory
+);
+router.get(
+  '/:id/current-schools',
+  generalLimiter,
+  teacherController.getTeacherCurrentSchools
+);
+router.get(
+  '/:id/school-summary',
+  generalLimiter,
+  teacherController.getTeacherSchoolSummary
+);
+
 export { router as teacherRoutes };

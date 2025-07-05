@@ -20,4 +20,25 @@ router.post('/', generalLimiter, schoolController.create);
 router.put('/:id', generalLimiter, schoolController.update);
 router.delete('/:id', generalLimiter, schoolController.delete);
 
+router.get(
+  '/:id/employment-history',
+  generalLimiter,
+  schoolController.getSchoolEmploymentHistory
+);
+router.get(
+  '/:id/teacher-assignments',
+  generalLimiter,
+  schoolController.getSchoolTeacherAssignments
+);
+router.get(
+  '/:id/current-teachers',
+  generalLimiter,
+  schoolController.getSchoolCurrentTeachers
+);
+router.get(
+  '/:id/teacher-summary',
+  generalLimiter,
+  schoolController.getSchoolTeacherSummary
+);
+
 export { router as schoolRoutes };
