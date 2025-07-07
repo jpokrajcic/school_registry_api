@@ -18,6 +18,7 @@ import { getRedisClient } from './redis/redisClient';
 import { authRoutes } from './routes/authRoutes';
 import { studentRoutes } from './routes/studentRoutes';
 import { teacherRoutes } from './routes/teacherRoutes';
+import { subjectRoutes } from './routes/subjectRoutes.js';
 import type { AppConfig, HealthResponse } from './types/general';
 import { getEnvironmentPath } from './utils/pathUtils';
 import { testDatabaseConnection } from './utils/databaseUtils';
@@ -113,6 +114,7 @@ const configureRoutes = (app: Express): void => {
   app.use('/api/schools', schoolRoutes);
   app.use('/api/students', studentRoutes);
   app.use('/api/teachers', teacherRoutes);
+  app.use('/api/subjects', subjectRoutes);
 
   // Health check endpoint
   app.get('/health', async (_req: Request, res: Response) => {
